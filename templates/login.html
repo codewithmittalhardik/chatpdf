@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - DocuGPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bg: '#07050c',
+                        primary: '#a188de',
+                        secondary: '#351684',
+                        accent: '#6c37f1',
+                        inputbg: '#13101a',
+                        text: '#e3dfec'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-bg text-text h-screen flex items-center justify-center font-sans">
+
+    <div class="w-full max-w-md p-8 bg-inputbg rounded-2xl border border-secondary/30 shadow-[0_0_40px_rgba(53,22,132,0.3)]">
+        
+        <div class="flex flex-col items-center mb-8">
+            <div class="w-12 h-12 bg-accent rounded-xl flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-lg">
+                <i class="ph ph-robot"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Welcome Back</h1>
+            <p class="text-primary/60 text-sm mt-2">Login to access your documents</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% if category == 'error' %}
+                        <div class="mb-4 p-3 rounded-lg border border-red-500/50 bg-red-500/10 flex items-center gap-2">
+                            <i class="ph ph-warning-circle text-red-400 text-lg"></i>
+                            <span class="text-xs font-medium text-red-300">{{ message }}</span>
+                        </div>
+                    {% else %}
+                        <div class="mb-4 p-3 rounded-lg border border-green-500/50 bg-green-500/10 flex items-center gap-2">
+                            <i class="ph ph-check-circle text-green-400 text-lg"></i>
+                            <span class="text-xs font-medium text-green-300">{{ message }}</span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/login" method="POST" class="space-y-5">
+            <div>
+                <label class="block text-xs font-medium text-primary uppercase mb-2">Username</label>
+                <input type="text" name="username" required 
+                    class="w-full bg-bg border border-secondary/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-primary uppercase mb-2">Password</label>
+                <input type="password" name="password" required 
+                    class="w-full bg-bg border border-secondary/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition">
+            </div>
+
+            <button type="submit" 
+                class="w-full bg-accent hover:bg-secondary text-white font-semibold py-3 rounded-lg transition-all shadow-lg hover:shadow-accent/50">
+                Log In
+            </button>
+        </form>
+
+        <p class="text-center text-sm text-gray-500 mt-6">
+            Don't have an account? 
+            <a href="/register" class="text-accent hover:text-white font-medium transition">Create one</a>
+        </p>
+    </div>
+
+</body>
+</html>
