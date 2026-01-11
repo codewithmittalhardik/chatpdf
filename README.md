@@ -1,3 +1,14 @@
+---
+title: DocuGPT
+emoji: 📄
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
+# The rest of your README text goes here...
 # 📄 DocuGPT - Chat with your PDFs
 
 DocuGPT is a smart web application that allows users to upload PDF documents and have natural, context-aware conversations with them. It uses **Llama 3 (via Groq)** for high-speed AI responses and **Pinecone** for vector storage, making it capable of understanding complex documents instantly.
