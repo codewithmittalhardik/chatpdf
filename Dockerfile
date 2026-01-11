@@ -26,4 +26,5 @@ EXPOSE 7860
 
 # Start command
 # -b 0.0.0.0:7860 binds the server to all interfaces on port 7860
-CMD ["gunicorn", "-b", "0.0.0.0:7860", "app:app"]
+# Increase timeout to 300 seconds (5 minutes) to handle large PDFs
+CMD ["gunicorn", "-b", "0.0.0.0:7860", "--timeout", "300", "app:app"]
