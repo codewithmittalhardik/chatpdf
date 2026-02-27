@@ -3,80 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - DocuGPT</title>
+    <title>Login | DocuGPT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        bg: '#07050c',
-                        primary: '#a188de',
-                        secondary: '#351684',
-                        accent: '#6c37f1',
-                        inputbg: '#13101a',
-                        text: '#e3dfec'
-                    }
-                }
-            }
+    <style>
+        :root {
+            --bg-color: #07050c;
+            --card-bg: rgba(19, 16, 26, 0.8);
+            --text-main: #e3dfec;
+            --text-muted: rgba(161, 136, 222, 0.6);
+            --accent: #6c37f1;
+            --input-border: rgba(53, 22, 132, 0.5);
         }
-    </script>
-</head>
-<body class="bg-bg text-text h-screen flex items-center justify-center font-sans">
 
-    <div class="w-full max-w-md p-8 bg-inputbg rounded-2xl border border-secondary/30 shadow-[0_0_40px_rgba(53,22,132,0.3)]">
+        /* Light Mode Variables Override */
+        body.light-mode {
+            --bg-color: #f5f7fa;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent: #6366f1;
+            --input-border: rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            transition: background-color 0.5s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Dark Mode Background */
+        .bg-mesh {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            z-index: -1;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Light Mode Background overlay */
+        body.light-mode .bg-mesh {
+            opacity: 0.2;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,90%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,85%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,85%,1) 0, transparent 50%);
+        }
+
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            transition: all 0.5s ease;
+        }
+
+        body.light-mode .glass-panel {
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-style {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--input-border);
+            color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        body.light-mode .input-style {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-style:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(108, 87, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="font-sans px-4">
+
+    <div class="bg-mesh"></div>
+
+    <button onclick="toggleTheme()" class="absolute top-6 right-6 w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl cursor-pointer hover:scale-110 transition-all z-50" style="color: var(--accent)">
+        <i id="themeIcon" class="ph-bold ph-moon"></i>
+    </button>
+
+    <div class="w-full max-w-[420px] glass-panel rounded-[2.5rem] p-10 relative overflow-hidden">
         
         <div class="flex flex-col items-center mb-8">
-            <div class="w-12 h-12 bg-accent rounded-xl flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-lg">
-                <i class="ph ph-robot"></i>
+            <div class="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center shadow-xl mb-4" style="background-color: var(--accent)">
+                <i class="ph-bold ph-robot text-white text-2xl"></i>
             </div>
-            <h1 class="text-2xl font-bold text-white">Welcome Back To DocuGPT</h1>
-            <p class="text-primary/60 text-sm mt-2">Login to access your documents</p>
+            <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-main)">DocuGPT</h1>
+            <p class="text-sm mt-1" style="color: var(--text-muted)">Welcome back to the future</p>
         </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    {% if category == 'error' %}
-                        <div class="mb-4 p-3 rounded-lg border border-red-500/50 bg-red-500/10 flex items-center gap-2">
-                            <i class="ph ph-warning-circle text-red-400 text-lg"></i>
-                            <span class="text-xs font-medium text-red-300">{{ message }}</span>
-                        </div>
-                    {% else %}
-                        <div class="mb-4 p-3 rounded-lg border border-green-500/50 bg-green-500/10 flex items-center gap-2">
-                            <i class="ph ph-check-circle text-green-400 text-lg"></i>
-                            <span class="text-xs font-medium text-green-300">{{ message }}</span>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
 
         <form action="/login" method="POST" class="space-y-5">
             <div>
-                <label class="block text-xs font-medium text-primary uppercase mb-2">Username</label>
-                <input type="text" name="username" required 
-                    class="w-full bg-bg border border-secondary/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition">
+                <label class="block text-xs font-bold uppercase tracking-widest mb-2 ml-1" style="color: var(--text-muted)">Username</label>
+                <input type="text" name="username" placeholder="Enter username" required 
+                    class="w-full input-style rounded-2xl px-5 py-3.5 placeholder:opacity-30">
             </div>
 
-            <div>
-                <label class="block text-xs font-medium text-primary uppercase mb-2">Password</label>
-                <input type="password" name="password" required 
-                    class="w-full bg-bg border border-secondary/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition">
+            <div class="relative">
+                <div class="flex justify-between items-center mb-2 ml-1">
+                    <label class="text-xs font-bold uppercase tracking-widest" style="color: var(--text-muted)">Password</label>
+                    <a href="#" class="text-xs font-medium hover:underline" style="color: var(--accent)">Forgot?</a>
+                </div>
+                <div class="relative">
+                    <input id="password" type="password" name="password" placeholder="••••••••" required 
+                        class="w-full input-style rounded-2xl px-5 py-3.5 placeholder:opacity-30">
+                    <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity" style="color: var(--text-main)">
+                        <i id="toggleIcon" class="ph ph-eye text-xl"></i>
+                    </button>
+                </div>
             </div>
 
             <button type="submit" 
-                class="w-full bg-accent hover:bg-secondary text-white font-semibold py-3 rounded-lg transition-all shadow-lg hover:shadow-accent/50">
-                Log In
+                class="w-full text-white font-bold py-4 rounded-2xl shadow-lg transition-all hover:-translate-y-0.5 active:scale-[0.98]" 
+                style="background-color: var(--accent)">
+                Sign In
             </button>
         </form>
 
-        <p class="text-center text-sm text-gray-500 mt-6">
+        <p class="text-center text-sm mt-8" style="color: var(--text-muted)">
             Don't have an account? 
-            <a href="/register" class="text-accent hover:text-white font-medium transition">Create one</a>
+            <a href="/register" class="font-bold hover:underline" style="color: var(--accent)">Create one</a>
         </p>
     </div>
 
+    <footer class="mt-10 text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 glass-panel rounded-full shadow-sm">
+            <span class="w-2 h-2 rounded-full animate-pulse" style="background-color: var(--accent)"></span>
+            <p class="text-xs font-semibold tracking-wide uppercase" style="color: var(--text-muted)">
+                Crafted by <span style="color: var(--accent)">Hardik Mittal</span>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('themeIcon');
+            body.classList.toggle('light-mode');
+            
+            if (body.classList.contains('light-mode')) {
+                icon.classList.replace('ph-moon', 'ph-sun');
+            } else {
+                icon.classList.replace('ph-sun', 'ph-moon');
+            }
+        }
+
+        function togglePassword() {
+            const pw = document.getElementById('password');
+            const icon = document.getElementById('toggleIcon');
+            if (pw.type === 'password') {
+                pw.type = 'text';
+                icon.classList.replace('ph-eye', 'ph-eye-slash');
+            } else {
+                pw.type = 'password';
+                icon.classList.replace('ph-eye-slash', 'ph-eye');
+            }
+        }
+    </script>
 </body>
 </html>
