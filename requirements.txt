@@ -95,9 +95,9 @@ tqdm==4.67.1
 transformers==4.57.3
 typing-inspection==0.4.2
 typing_extensions==4.15.0
+yarl==1.22.0
+zstandard==0.25.0
+xxhash==3.6.0
 urllib3==2.6.3
 uuid_utils==0.13.0
 Werkzeug==3.1.5
-xxhash==3.6.0
-yarl==1.22.0
-zstandard==0.25.0
