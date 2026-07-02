@@ -149,6 +149,37 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route('/delete-account', methods=['POST'])
+@login_required
+def delete_account():
+    try:
+        user_id = current_user.id
+
+        # 1. Delete all Pinecone vectors for each chat
+        user_chats = list(db.chats.find({"user_id": user_id}))
+        for chat in user_chats:
+            try:
+                pc.Index(INDEX_NAME).delete(delete_all=True, namespace=chat['namespace_id'])
+            except Exception as pe:
+                print(f"Pinecone cleanup error (continuing): {pe}")
+
+        # 2. Delete all chat documents from MongoDB
+        db.chats.delete_many({"user_id": user_id})
+
+        # 3. Delete the user document
+        db.users.delete_one({"_id": ObjectId(user_id)})
+
+        # 4. Log out and redirect
+        logout_user()
+        flash('Your account has been permanently deleted.', 'info')
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        print(f"Delete Account Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 # --- APP ROUTES ---
 
 @app.route('/chat')
@@ -334,5 +365,4 @@ def after_request(response):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8000))
     print(f"Starting Flask app on port {port}")
-    print(f"Access at: http://0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port, debug=True)
