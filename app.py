@@ -121,6 +121,34 @@ def login():
             
     return render_template('login.html')
 
+@app.route('/reset_password', methods=['POST'])
+def reset_password():
+    username = request.form.get('username')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+    
+    if not username or not new_password:
+        flash('Please fill in all fields.', 'error')
+        return redirect(url_for('login'))
+        
+    if new_password != confirm_password:
+        flash('Passwords do not match.', 'error')
+        return redirect(url_for('login'))
+        
+    user_data = db.users.find_one({"username": username})
+    if not user_data:
+        flash('Username not found.', 'error')
+        return redirect(url_for('login'))
+        
+    hashed_pw = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.users.update_one(
+        {"username": username},
+        {"$set": {"password": hashed_pw}}
+    )
+    
+    flash('Password reset successfully! Please login with your new password.', 'success')
+    return redirect(url_for('login'))
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
