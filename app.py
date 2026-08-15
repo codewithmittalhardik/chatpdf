@@ -2,6 +2,7 @@ import os
 import uuid
 import datetime
 import urllib3
+import certifi
 import pdfplumber  # <--- NEW LIBRARY (Replaces pypdf)
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
@@ -48,7 +49,7 @@ CORS(app, resources={
 })
 
 # --- DATABASE & AUTH SETUP ---
-mongo = PyMongo(app)
+mongo = PyMongo(app, tlsCAFile=certifi.where())
 db = mongo.cx['chatpdf_db']
 bcrypt = Bcrypt(app)
 login_manager = LoginManager()
