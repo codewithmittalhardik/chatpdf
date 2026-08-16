@@ -286,18 +286,22 @@ def forgot_password():
 
     if user and user.get('email'):
         token = generate_reset_token(user['email'])
-        site_url = os.getenv('APP_URL', '').rstrip('/')
-        if site_url:
-            reset_url = f"{site_url}/reset_password/{token}"
-        else:
+        # If running locally, generate local reset URL; otherwise use APP_URL
+        if "127.0.0.1" in request.host or "localhost" in request.host:
             reset_url = url_for('reset_password_token', token=token, _external=True)
+        else:
+            site_url = os.getenv('APP_URL', '').rstrip('/')
+            if site_url:
+                reset_url = f"{site_url}/reset_password/{token}"
+            else:
+                reset_url = url_for('reset_password_token', token=token, _external=True)
+                
         send_reset_email(user['email'], reset_url)
-        flash(f'Verification email sent to {user["email"]}! Check your inbox for the reset link.', 'success')
+        flash(f'Reset link sent for {user["email"]}! Check your inbox (or terminal console).', 'success')
     elif user and not user.get('email'):
         flash('This account does not have an email registered. Please contact support.', 'error')
     else:
-        # Standard response for security
-        flash('If an account exists with that email/username, a reset link has been sent.', 'success')
+        flash('No registered account found with that email or username. Please register first.', 'error')
 
     return redirect(url_for('login'))
 
