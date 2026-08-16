@@ -15,8 +15,8 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 # Copy the rest of your application code
 COPY . .
 
-# Create a non-root user (Mandatory for Hugging Face Security)
-RUN useradd -m -u 1000 user
+# Create a non-root user and grant ownership of /code directory
+RUN useradd -m -u 1000 user && chown -R user:user /code
 USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
