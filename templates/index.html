@@ -283,9 +283,9 @@
         <!-- Right Header Actions -->
         <div class="flex items-center gap-3">
             <button onclick="document.getElementById('pdfFile').click()" 
-                class="gradient-btn text-white text-xs font-bold px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-lg hover:brightness-110 active:scale-95 transition">
+                class="hidden sm:flex gradient-btn text-white text-xs font-bold px-4 py-2.5 rounded-2xl items-center gap-2 shadow-lg hover:brightness-110 active:scale-95 transition">
                 <i class="ph-bold ph-plus text-sm"></i>
-                <span class="hidden sm:inline">Upload PDF</span>
+                <span>Upload PDF</span>
             </button>
             <input type="file" id="pdfFile" accept=".pdf" class="hidden" />
 
@@ -393,18 +393,18 @@
         <!-- MAIN CHAT / CANVAS AREA -->
         <main class="flex-1 flex flex-col relative w-full h-full min-w-0 bg-transparent">
             
-            <!-- Mobile-only PDF & User Info Bar (Where PDF is shown on phone screens) -->
+            <!-- Mobile-only User Info Bar (Shows active PDF name only when loaded) -->
             <div class="flex md:hidden items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-md border-b border-slate-200/60 z-30 shrink-0">
-                <div class="flex items-center gap-2 text-xs text-slate-700 font-medium truncate max-w-[55%]">
+                <div id="mobile-document-indicator" class="hidden items-center gap-2 text-xs text-slate-700 font-medium truncate max-w-[55%]">
                     <i class="ph-bold ph-file-pdf text-indigo-600 text-sm shrink-0"></i>
-                    <span id="mobile-top-filename" class="truncate font-semibold text-slate-900">No active PDF</span>
+                    <span id="mobile-top-filename" class="truncate font-semibold text-slate-900"></span>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 ml-auto">
                     <div onclick="showDeleteAccountModal()" class="flex items-center gap-1.5 bg-slate-100/90 px-2 py-1 rounded-xl border border-slate-200 cursor-pointer" title="Click to Delete Account">
                         <div class="w-5 h-5 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                             {{ user.username[0] | upper }}
                         </div>
-                        <span class="text-xs font-bold text-slate-800 max-w-[70px] truncate">{{ user.username }}</span>
+                        <span class="text-xs font-bold text-slate-800 max-w-[80px] truncate">{{ user.username }}</span>
                     </div>
                     <a href="/logout" class="p-1.5 text-slate-500 hover:text-red-600 bg-slate-100/90 rounded-xl border border-slate-200 transition flex items-center justify-center" title="Logout">
                         <i class="ph ph-sign-out text-sm"></i>
@@ -537,8 +537,11 @@
             if (window.innerWidth < 768) toggleSidebar();
 
             document.getElementById('top-filename').innerText = "No active PDF";
-            const mobileTopFn = document.getElementById('mobile-top-filename');
-            if (mobileTopFn) mobileTopFn.innerText = "No active PDF";
+            const mobileDocInd = document.getElementById('mobile-document-indicator');
+            if (mobileDocInd) {
+                mobileDocInd.classList.add('hidden');
+                mobileDocInd.classList.remove('flex');
+            }
             document.getElementById('top-status').innerText = "Idle";
             document.getElementById('top-status').className = "text-[10px] text-slate-500 font-bold uppercase tracking-wider";
 
@@ -889,7 +892,12 @@
             document.getElementById('filename-display').innerText = file.name;
             document.getElementById('top-filename').innerText = file.name;
             const mobileTopFn = document.getElementById('mobile-top-filename');
+            const mobileDocInd = document.getElementById('mobile-document-indicator');
             if (mobileTopFn) mobileTopFn.innerText = file.name;
+            if (mobileDocInd) {
+                mobileDocInd.classList.remove('hidden');
+                mobileDocInd.classList.add('flex');
+            }
             document.getElementById('top-document-indicator').classList.remove('hidden');
             document.getElementById('top-document-indicator').classList.add('flex');
             document.getElementById('top-status').innerText = "Indexing...";
@@ -990,7 +998,12 @@
                 
                 document.getElementById('top-filename').innerText = displayName;
                 const mobileTopFn = document.getElementById('mobile-top-filename');
+                const mobileDocInd = document.getElementById('mobile-document-indicator');
                 if (mobileTopFn) mobileTopFn.innerText = displayName;
+                if (mobileDocInd) {
+                    mobileDocInd.classList.remove('hidden');
+                    mobileDocInd.classList.add('flex');
+                }
                 document.getElementById('top-document-indicator').classList.remove('hidden');
                 document.getElementById('top-document-indicator').classList.add('flex');
                 document.getElementById('top-status').innerText = "Ready";
