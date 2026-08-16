@@ -25,7 +25,7 @@ DocuGPT is a smart web application that allows users to upload PDF documents and
 
 ## 🛠️ Tech Stack
 
-* **Backend:** Python, Flask, Gunicorn
+* **Backend:** Python, Django, Gunicorn
 * **Database:** MongoDB Atlas (NoSQL)
 * **Vector DB:** Pinecone (Serverless)
 * **AI Model:** Llama 3 (via Groq API)
@@ -38,7 +38,7 @@ Follow these steps to run the project on your machine.
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/yourusername/docugpt.git](https://github.com/yourusername/docugpt.git)
+git clone https://github.com/yourusername/docugpt.git
 cd docugpt
 ```
 **Create a Virtual Environment**
@@ -64,21 +64,27 @@ GROQ_API_KEY=your_groq_api_key
 ```
 **Run the Application**
 ```bash
+# Apply Django migrations
+python3 manage.py migrate
+
 # For Development
-python3 app.py
+python3 manage.py runserver 8000
 
 # For Production/Testing
-gunicorn app:app
+gunicorn chatpdf_project.wsgi:application
 ```
 **Project Structure**
 ```text
 docugpt/
-├── app.py              # Main Flask Application
-├── requirements.txt    # Python Dependencies
-├── templates/
-│   ├── index.html      # Dashboard & Chat UI
-│   ├── login.html      # Login Page
-│   └── register.html   # Registration Page
-├── .env                # API Keys (Not pushed to GitHub)
-└── README.md           # Documentation
+├── manage.py               # Django Management Script
+├── chatpdf_project/        # Django Project Configuration
+├── chat/                   # Core Chat & Auth App
+├── requirements.txt        # Python Dependencies
+├── templates/              # HTML Templates
+│   ├── index.html          # Dashboard & Chat UI
+│   ├── login.html          # Login Page
+│   ├── register.html       # Registration Page
+│   └── reset_password.html # Reset Password Page
+├── .env                    # API Keys
+└── README.md               # Documentation
 ```

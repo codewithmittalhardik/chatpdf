@@ -289,19 +289,17 @@
                 </div>
 
                 <!-- Flash Messages Container -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="mb-5 p-3.5 rounded-2xl border flex items-center gap-2.5 text-xs font-medium transition-all" 
-                                 style="background: {% if category == 'error' %}rgba(239, 68, 68, 0.08){% else %}rgba(16, 185, 129, 0.08){% endif %}; 
-                                        border-color: {% if category == 'error' %}rgba(239, 68, 68, 0.2){% else %}rgba(16, 185, 129, 0.25){% endif %}; 
-                                        color: {% if category == 'error' %}#dc2626{% else %}#059669{% endif %};">
-                                <i class="ph {% if category == 'error' %}ph-warning-circle{% else %}ph-check-circle{% endif %} text-lg shrink-0"></i>
-                                <span>{{ message }}</span>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-5 p-3.5 rounded-2xl border flex items-center gap-2.5 text-xs font-medium transition-all" 
+                             style="background: {% if message.tags == 'error' %}rgba(239, 68, 68, 0.08){% else %}rgba(16, 185, 129, 0.08){% endif %}; 
+                                    border-color: {% if message.tags == 'error' %}rgba(239, 68, 68, 0.2){% else %}rgba(16, 185, 129, 0.25){% endif %}; 
+                                    color: {% if message.tags == 'error' %}#dc2626{% else %}#059669{% endif %};">
+                            <i class="ph {% if message.tags == 'error' %}ph-warning-circle{% else %}ph-check-circle{% endif %} text-lg shrink-0"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
 
                 <!-- FORMS WRAPPER (Directional Sliding Between Sign In and Register) -->
                 <div class="relative min-h-[380px] w-full flex flex-col justify-center">
@@ -314,6 +312,7 @@
                         </div>
 
                         <form action="/login" method="POST" class="space-y-4">
+                            {% csrf_token %}
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider mb-2 ml-1 text-slate-500">Username or Email</label>
                                 <div class="relative">
@@ -324,9 +323,9 @@
                             </div>
 
                             <div>
-                                <div class="flex justify-between items-center mb-2 ml-1">
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Password</label>
-                                    <button type="button" onclick="openForgotModal()" class="text-xs font-semibold hover:underline text-indigo-600">Forgot?</button>
+                                <div class="flex items-center justify-between mb-2 ml-1">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Password</label>
+                                    <button type="button" onclick="openForgotModal()" class="text-xs font-medium text-indigo-600 hover:underline">Forgot password?</button>
                                 </div>
                                 <div class="relative">
                                     <input id="loginPassword" type="password" name="password" placeholder="••••••••" required 
@@ -338,14 +337,14 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="w-full text-white font-bold py-3.5 rounded-2xl gradient-btn text-sm shadow-xl mt-2 active:scale-[0.98]">
-                                Sign In to Workspace
+                            <button type="submit" class="w-full gradient-btn text-white font-bold py-3.5 px-4 rounded-2xl text-sm shadow-lg mt-2 flex items-center justify-center gap-2">
+                                <span>Sign In</span>
                             </button>
                         </form>
 
                         <p class="text-center text-xs mt-6 text-slate-500">
-                            Need an account? 
-                            <button type="button" onclick="setAuthMode('register')" class="font-bold text-indigo-600 hover:underline">Create one for free</button>
+                            Don't have an account? 
+                            <button type="button" onclick="setAuthMode('register')" class="font-bold text-indigo-600 hover:underline">Create one now</button>
                         </p>
                     </div>
 
@@ -357,6 +356,7 @@
                         </div>
 
                         <form action="/register" method="POST" class="space-y-4">
+                            {% csrf_token %}
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider mb-2 ml-1 text-slate-500">Username</label>
                                 <div class="relative">
@@ -418,14 +418,15 @@
                     <i class="ph-bold ph-envelope-simple text-white text-xl"></i>
                 </div>
                 <h2 class="text-lg font-bold tracking-tight text-slate-900">Reset Password</h2>
-                <p class="text-xs mt-1 text-slate-500">Enter your email to receive a secure reset link</p>
+                <p class="text-xs mt-1 text-slate-500">Enter your email or username to receive a secure reset link</p>
             </div>
 
             <form action="/forgot_password" method="POST" class="space-y-4">
+                {% csrf_token %}
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5 ml-1 text-slate-500">Email Address</label>
+                    <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5 ml-1 text-slate-500">Username or Email</label>
                     <div class="relative">
-                        <input type="email" name="identity" placeholder="name@example.com" required 
+                        <input type="text" name="identity" placeholder="name@example.com or username" required 
                             class="w-full input-field rounded-2xl px-4 py-3 text-sm placeholder:text-slate-400 pl-11">
                         <i class="ph ph-at absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"></i>
                     </div>

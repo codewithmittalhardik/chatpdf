@@ -272,13 +272,7 @@
             </div>
         </div>
 
-        <!-- Center Active PDF Indicator -->
-        <div id="top-document-indicator" class="hidden md:flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-100/80 border border-slate-200 text-xs text-slate-700 font-medium">
-            <i class="ph-bold ph-file-pdf text-indigo-600 text-sm"></i>
-            <span id="top-filename" class="truncate max-w-[200px]">No active PDF</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-            <span id="top-status" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Idle</span>
-        </div>
+
 
         <!-- Right Header Actions -->
         <div class="flex items-center gap-3">
@@ -295,7 +289,7 @@
             <div class="flex items-center gap-1.5 sm:gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200">
                 <div onclick="showDeleteAccountModal()" class="flex items-center gap-1.5 sm:gap-2 cursor-pointer hover:opacity-90 transition group" title="Click to Delete Account">
                     <div class="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-xs font-bold group-hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] transition shrink-0">
-                        {{ user.username[0] | upper }}
+                        {{ user.username|first|upper }}
                     </div>
                     <span class="inline-block max-w-[70px] sm:max-w-[150px] truncate text-xs font-semibold text-slate-700 group-hover:text-red-600 transition pr-1">{{ user.username }}</span>
                 </div>
@@ -393,16 +387,7 @@
         <!-- MAIN CHAT / CANVAS AREA -->
         <main class="flex-1 flex flex-col relative w-full h-full min-w-0 bg-transparent">
             
-            <!-- Mobile-only Active PDF Bar (Only appears when a PDF is active) -->
-            <div id="mobile-document-indicator" class="hidden md:hidden items-center justify-between px-4 py-2 bg-indigo-50/90 backdrop-blur-md border-b border-indigo-100 z-30 shrink-0">
-                <div class="flex items-center gap-2 text-xs text-slate-700 font-medium truncate max-w-[80%]">
-                    <i class="ph-bold ph-file-pdf text-indigo-600 text-sm shrink-0"></i>
-                    <span id="mobile-top-filename" class="truncate font-semibold text-slate-900"></span>
-                </div>
-                <button onclick="event.stopPropagation(); deleteCurrentActiveChat(this)" class="p-1 text-slate-400 hover:text-red-500 transition rounded-lg shrink-0" title="Delete Active PDF">
-                    <i class="ph ph-trash text-sm"></i>
-                </button>
-            </div>
+
 
             <div class="flex-1 overflow-y-auto scroll-smooth p-4 md:p-8 space-y-6" id="chat-container">
                 
@@ -503,46 +488,62 @@
             if (window.innerWidth >= 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
                 document.getElementById('sidebar').classList.add('is-collapsed');
             }
+            startNewChat(false);
         });
 
         function showToast() {
             const toast = document.getElementById('toast-success');
-            toast.classList.remove('translate-x-[200%]');
-            toast.classList.add('translate-x-0');
-            
-            setTimeout(() => {
-                toast.classList.remove('translate-x-0');
-                toast.classList.add('translate-x-[200%]');
-            }, 3500);
+            if (toast) {
+                toast.classList.remove('translate-x-[200%]');
+                toast.classList.add('translate-x-0');
+                setTimeout(() => {
+                    toast.classList.remove('translate-x-0');
+                    toast.classList.add('translate-x-[200%]');
+                }, 3500);
+            }
         }
 
         function setPrompt(text) {
             const input = document.getElementById('questionInput');
-            input.value = text;
-            input.focus();
-            input.style.height = '';
-            input.style.height = input.scrollHeight + 'px';
+            if (input) {
+                input.value = text;
+                input.focus();
+                input.style.height = '';
+                input.style.height = input.scrollHeight + 'px';
+            }
         }
 
-        function startNewChat() {
+        function startNewChat(toggleMobileSidebar = true) {
             currentSessionId = null;
-            if (window.innerWidth < 768) toggleSidebar();
+            if (toggleMobileSidebar && window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
+            }
 
-            document.getElementById('top-filename').innerText = "No active PDF";
+            if (document.getElementById('top-filename')) document.getElementById('top-filename').innerText = "No active PDF";
             const mobileDocInd = document.getElementById('mobile-document-indicator');
             if (mobileDocInd) {
                 mobileDocInd.classList.add('hidden');
                 mobileDocInd.classList.remove('flex');
             }
-            document.getElementById('top-status').innerText = "Idle";
-            document.getElementById('top-status').className = "text-[10px] text-slate-500 font-bold uppercase tracking-wider";
+            if (document.getElementById('top-status')) {
+                document.getElementById('top-status').innerText = "Idle";
+                document.getElementById('top-status').className = "text-[10px] text-slate-500 font-bold uppercase tracking-wider";
+            }
 
-            document.getElementById('chat-history').classList.add('hidden');
-            document.getElementById('empty-state').classList.remove('hidden');
+            const chatHist = document.getElementById('chat-history');
+            if (chatHist) chatHist.classList.add('hidden');
+            
+            const emptySt = document.getElementById('empty-state');
+            if (emptySt) emptySt.classList.remove('hidden');
 
             const input = document.getElementById('questionInput');
-            input.value = '';
-            input.style.height = 'auto';
+            if (input) {
+                input.value = '';
+                input.style.height = 'auto';
+            }
 
             document.querySelectorAll('.chat-item').forEach(item => {
                 item.classList.remove('bg-indigo-50/90', 'border-indigo-300', 'shadow-sm');
@@ -881,8 +882,8 @@
 
             if (window.innerWidth < 768) toggleSidebar(); 
             
-            document.getElementById('filename-display').innerText = file.name;
-            document.getElementById('top-filename').innerText = file.name;
+            if (document.getElementById('filename-display')) document.getElementById('filename-display').innerText = file.name;
+            if (document.getElementById('top-filename')) document.getElementById('top-filename').innerText = file.name;
             const mobileTopFn = document.getElementById('mobile-top-filename');
             const mobileDocInd = document.getElementById('mobile-document-indicator');
             if (mobileTopFn) mobileTopFn.innerText = file.name;
@@ -890,10 +891,14 @@
                 mobileDocInd.classList.remove('hidden');
                 mobileDocInd.classList.add('flex');
             }
-            document.getElementById('top-document-indicator').classList.remove('hidden');
-            document.getElementById('top-document-indicator').classList.add('flex');
-            document.getElementById('top-status').innerText = "Indexing...";
-            document.getElementById('top-status').className = "text-[10px] text-amber-600 font-bold uppercase tracking-wider";
+            if (document.getElementById('top-document-indicator')) {
+                document.getElementById('top-document-indicator').classList.remove('hidden');
+                document.getElementById('top-document-indicator').classList.add('flex');
+            }
+            if (document.getElementById('top-status')) {
+                document.getElementById('top-status').innerText = "Indexing...";
+                document.getElementById('top-status').className = "text-[10px] text-amber-600 font-bold uppercase tracking-wider";
+            }
 
             uploadWidget.classList.remove('hidden');
             spinner.classList.remove('hidden');
@@ -988,7 +993,7 @@
             if (chatEl) {
                 const displayName = chatEl.querySelector('.truncate')?.innerText || 'Active PDF';
                 
-                document.getElementById('top-filename').innerText = displayName;
+                if (document.getElementById('top-filename')) document.getElementById('top-filename').innerText = displayName;
                 const mobileTopFn = document.getElementById('mobile-top-filename');
                 const mobileDocInd = document.getElementById('mobile-document-indicator');
                 if (mobileTopFn) mobileTopFn.innerText = displayName;
@@ -996,10 +1001,14 @@
                     mobileDocInd.classList.remove('hidden');
                     mobileDocInd.classList.add('flex');
                 }
-                document.getElementById('top-document-indicator').classList.remove('hidden');
-                document.getElementById('top-document-indicator').classList.add('flex');
-                document.getElementById('top-status').innerText = "Ready";
-                document.getElementById('top-status').className = "text-[10px] text-emerald-600 font-bold uppercase tracking-wider";
+                if (document.getElementById('top-document-indicator')) {
+                    document.getElementById('top-document-indicator').classList.remove('hidden');
+                    document.getElementById('top-document-indicator').classList.add('flex');
+                }
+                if (document.getElementById('top-status')) {
+                    document.getElementById('top-status').innerText = "Ready";
+                    document.getElementById('top-status').className = "text-[10px] text-emerald-600 font-bold uppercase tracking-wider";
+                }
                 
                 document.querySelectorAll('.chat-item').forEach(item => {
                     item.classList.remove('bg-indigo-50/90', 'border-indigo-300', 'shadow-sm');
