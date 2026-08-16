@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DocuGPT</title>
+    <title>ChatPDF | AI Document Workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
@@ -11,15 +14,18 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    },
                     colors: {
-                        bg: '#07050c',
-                        sidebar: '#0b0910',
-                        primary: '#a188de',
-                        secondary: '#351684',
-                        accent: '#6c37f1',
-                        textcontrast: '#64d97b',
-                        text: '#e3dfec',
-                        inputbg: '#13101a',
+                        bg: '#f1f5f9',
+                        sidebar: 'rgba(255, 255, 255, 0.75)',
+                        primary: '#4f46e5',
+                        secondary: '#e0e7ff',
+                        accent: '#6366f1',
+                        textcontrast: '#059669',
+                        text: '#0f172a',
+                        inputbg: 'rgba(255, 255, 255, 0.85)',
                     }
                 }
             }
@@ -27,45 +33,105 @@
     </script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
         .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-        /* 3D Sphere in empty state */
-        #empty-state { position: relative; }
-        #sphereCanvas {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        #empty-state .empty-content {
-            position: relative;
-            z-index: 1;
-        }
-        #bgParticlesCanvas {
+        .bg-mesh {
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
+                radial-gradient(at 90% 20%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
+                radial-gradient(at 50% 90%, rgba(14, 165, 233, 0.16) 0px, transparent 50%);
+            z-index: -1;
+        }
+
+        #empty-state { position: relative; }
+        #canvas-wrapper {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        #sphereCanvas {
             width: 100%;
             height: 100%;
             pointer-events: none;
+            z-index: 1;
+        }
+        #empty-state .empty-content {
+            position: relative;
+            z-index: 10;
+        }
+        #bgParticlesCanvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
             z-index: 0;
         }
 
+        #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border-right: 1px solid rgba(203, 213, 225, 0.9);
+            box-shadow: 10px 0 35px -10px rgba(15, 23, 42, 0.1);
+        }
 
-        /* Delete Account Modal */
+        @media (min-width: 768px) {
+            #sidebar.is-collapsed {
+                margin-left: -18rem;
+                opacity: 0;
+                pointer-events: none;
+            }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.6);
+        }
+
+        .hero-glass-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1.5px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 25px 60px -10px rgba(79, 70, 229, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.7);
+        }
+
+        .gradient-btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #0284c7 100%);
+            background-size: 200% 200%;
+            transition: all 0.35s ease;
+        }
+
+        .gradient-btn:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%);
+            box-shadow: 0 12px 28px -6px rgba(168, 85, 247, 0.45);
+            transform: translateY(-2px) scale(1.04);
+        }
+
+        /* Modal Overlay */
         .modal-overlay {
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 200;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -78,13 +144,13 @@
             pointer-events: all;
         }
         .modal-card {
-            background: #13101a;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            max-width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 1.75rem;
+            padding: 2.25rem;
+            max-width: 420px;
             width: 90%;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(108, 55, 241, 0.1);
+            box-shadow: 0 30px 70px rgba(15, 23, 42, 0.25);
             transform: scale(0.9) translateY(20px);
             transition: transform 0.3s ease;
         }
@@ -92,11 +158,11 @@
             transform: scale(1) translateY(0);
         }
         .modal-input {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e3dfec;
-            border-radius: 0.75rem;
-            padding: 0.65rem 1rem;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            color: #0f172a;
+            border-radius: 0.85rem;
+            padding: 0.75rem 1rem;
             width: 100%;
             font-size: 0.875rem;
             outline: none;
@@ -111,7 +177,7 @@
             color: white;
             font-weight: 700;
             padding: 0.65rem 1.25rem;
-            border-radius: 0.75rem;
+            border-radius: 0.85rem;
             border: none;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -127,191 +193,48 @@
             transform: translateY(-1px);
         }
         .btn-cancel {
-            background: rgba(255, 255, 255, 0.06);
-            color: #a1a1aa;
+            background: rgba(241, 245, 249, 0.8);
+            color: #64748b;
             font-weight: 600;
             padding: 0.65rem 1.25rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.85rem;
+            border: 1px solid rgba(226, 232, 240, 0.8);
             cursor: pointer;
             transition: all 0.2s ease;
         }
         .btn-cancel:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            background: rgba(226, 232, 240, 0.9);
+            color: #0f172a;
         }
     </style>
 </head>
-<body class="bg-bg text-text h-[100dvh] flex overflow-hidden font-sans relative">
+<body class="bg-bg text-text h-[100dvh] flex flex-col overflow-hidden font-sans relative">
+    <div class="bg-mesh"></div>
     <canvas id="bgParticlesCanvas"></canvas>
 
-    <div id="toast-success" class="fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-[200%] transition-transform duration-500 z-[100] flex items-center gap-3 bg-textcontrast/90 text-black px-6 py-3 rounded-full shadow-[0_0_20px_rgba(100,217,123,0.4)] backdrop-blur-md">
-        <i class="ph ph-check-circle-fill text-xl"></i>
-        <div class="flex flex-col">
-            <span class="font-bold text-sm">Upload Successful</span>
-            <span class="text-[10px] opacity-80 uppercase tracking-wider">File Processed</span>
-        </div>
-    </div>
-
-    <div id="mobile-overlay" onclick="toggleSidebar()" 
-         class="fixed inset-0 bg-black/80 z-40 hidden transition-opacity duration-300 backdrop-blur-sm md:hidden"></div>
-
-    <aside id="sidebar" 
-           class="fixed inset-y-0 left-0 z-50 w-72 bg-sidebar transform -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 md:flex flex-col border-r border-white/10 shadow-2xl md:shadow-none">
-        
-        <!-- Brand Header -->
-        <div class="p-4 flex items-center justify-between border-b border-white/5">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center shadow-lg shadow-accent/20">
-                    <i class="ph-bold ph-robot text-white text-lg"></i>
-                </div>
-                <div>
-                    <div class="font-bold text-base tracking-tight text-white">DocuGPT</div>
-                    <div class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">AI Document Chat</div>
-                </div>
-            </div>
-            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 p-2 hover:bg-white/5 rounded-lg transition">
-                <i class="ph ph-x text-xl"></i>
-            </button>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="px-4 pt-3 pb-2 flex items-center gap-2">
-            <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5">
-                <i class="ph ph-files text-accent text-sm"></i>
-                <span class="text-[11px] text-gray-400 font-medium">{{ chats|length }} chat{{ 's' if chats|length != 1 }}</span>
-            </div>
-            <div class="px-3 py-2 rounded-lg bg-accent/10 border border-accent/20">
-                <span class="text-[10px] text-accent font-bold uppercase tracking-wider">Pro</span>
-            </div>
-        </div>
-
-        <!-- New Upload Button -->
-        <div class="px-4 pb-2">
-            <div class="relative group cursor-pointer" onclick="document.getElementById('pdfFile').click()">
-                <div class="flex items-center gap-3 px-3 py-3 rounded-xl bg-accent/10 border border-accent/20 hover:bg-accent/20 hover:border-accent/40 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-accent/10">
-                    <div class="w-7 h-7 rounded-lg bg-accent/20 flex items-center justify-center">
-                        <i class="ph-bold ph-plus text-accent text-sm"></i>
-                    </div>
-                    <span class="text-sm font-semibold text-accent">New PDF Upload</span>
-                </div>
-                <input type="file" id="pdfFile" accept=".pdf" class="hidden" />
-            </div>
-        </div>
-
-        <!-- Search -->
-        <div class="px-4 pb-3">
-            <div class="relative">
-                <i class="ph ph-magnifying-glass text-gray-500 text-sm absolute left-3 top-1/2 -translate-y-1/2"></i>
-                <input type="text" id="chatSearch" placeholder="Search chats..." 
-                    class="w-full bg-white/[0.03] border border-white/5 rounded-lg pl-9 pr-3 py-2 text-xs text-text placeholder-gray-600 focus:outline-none focus:border-accent/30 transition"
-                    oninput="filterChats(this.value)">
-            </div>
-        </div>
-
-        <!-- Chat List -->
-        <div class="flex-1 overflow-y-auto px-2 no-scrollbar">
-            <div class="flex items-center justify-between px-3 mb-2">
-                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Recent Chats</div>
-            </div>
+    <!-- Delete Account Modal (100% Bulletproof Tailwind Glass Modal) -->
+    <div id="deleteAccountModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md hidden p-4" onclick="if(event.target===this) hideDeleteAccountModal()">
+        <div class="w-full max-w-[420px] glass-panel rounded-3xl p-7 sm:p-8 relative border border-white/80 shadow-2xl transition-all">
             
-            <div id="upload-widget" class="hidden mx-2 mb-3 p-3 rounded-lg bg-secondary/20 border border-secondary/50">
-                <div class="flex items-center gap-2 mb-2">
-                    <i class="ph ph-file-pdf text-accent"></i>
-                    <span class="text-xs text-primary truncate" id="filename-display">file.pdf</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div id="spinner" class="animate-spin text-accent"><i class="ph ph-spinner text-sm"></i></div>
-                    <span id="upload-status-text" class="text-xs text-gray-400">Processing...</span>
-                    <i id="status-icon" class="ph ph-check-circle text-textcontrast hidden"></i>
-                </div>
-            </div>
-
-            <div id="chatList" class="space-y-1">
-                {% for chat in chats %}
-                <div class="chat-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 cursor-pointer transition group" onclick="loadChat('{{ chat.id }}')" data-name="{{ chat.pdf_name | lower }}">
-                    <div class="w-7 h-7 rounded-lg bg-white/[0.04] flex items-center justify-center shrink-0 group-hover:bg-accent/10 transition">
-                        <i class="ph ph-file-pdf text-gray-500 group-hover:text-accent text-sm transition"></i>
-                    </div>
-                    <div class="text-sm text-gray-300 truncate flex-1 group-hover:text-white transition">{{ chat.pdf_name }}</div>
-                    <button onclick="event.stopPropagation(); deleteChat('{{ chat.id }}', this)"
-                            class="p-1.5 text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition delete-btn">
-                        <i class="ph ph-trash text-sm"></i>
-                    </button>
-                </div>
-                {% endfor %}
-            </div>
-
-            {% if not chats %}
-            <div class="flex flex-col items-center justify-center py-10 text-center px-4">
-                <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
-                    <i class="ph ph-chat-teardrop-dots text-gray-600 text-xl"></i>
-                </div>
-                <p class="text-xs text-gray-600 leading-relaxed">No chats yet.<br>Upload a PDF to start.</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="px-4 py-2 border-t border-white/5">
-            <div class="flex items-center gap-1">
-                <button onclick="document.getElementById('pdfFile').click()" class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-gray-500 hover:text-accent hover:bg-accent/5 transition text-xs font-medium">
-                    <i class="ph ph-upload-simple text-sm"></i>
-                    <span>Upload</span>
-                </button>
-                <div class="w-px h-4 bg-white/5"></div>
-                <button onclick="showShortcutsToast()" class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-gray-500 hover:text-accent hover:bg-accent/5 transition text-xs font-medium">
-                    <i class="ph ph-keyboard text-sm"></i>
-                    <span>Shortcuts</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="p-4 border-t border-white/10 bg-black/20">
-            <div class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition group relative">
-                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-secondary flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                    {{ user.username[0] | upper }}
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium text-white truncate">{{ user.username }}</div>
-                    <div class="text-[10px] text-green-400 flex items-center gap-1">
-                        <div class="w-1.5 h-1.5 rounded-full bg-green-400"></div> Online
-                    </div>
-                </div>
-                <div class="flex items-center gap-1">
-                    <button onclick="showDeleteAccountModal()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Delete Account">
-                        <i class="ph ph-user-minus text-lg"></i>
-                    </button>
-                    <a href="/logout" class="p-2 text-gray-400 hover:text-red-400 transition" title="Logout">
-                        <i class="ph ph-sign-out text-xl"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Delete Account Confirmation Modal -->
-    <div id="deleteAccountModal" class="modal-overlay" onclick="if(event.target===this) hideDeleteAccountModal()">
-        <div class="modal-card">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center">
-                    <i class="ph ph-warning text-red-400 text-xl"></i>
+            <div class="flex items-center gap-3.5 mb-4">
+                <div class="w-11 h-11 rounded-2xl bg-red-100 border border-red-200 flex items-center justify-center shrink-0">
+                    <i class="ph-bold ph-warning text-red-600 text-2xl"></i>
                 </div>
                 <div>
-                    <h3 class="text-white font-bold text-lg">Delete Account</h3>
-                    <p class="text-gray-500 text-xs">This action is irreversible</p>
+                    <h3 class="text-slate-900 font-extrabold text-xl tracking-tight">Delete Account</h3>
+                    <p class="text-slate-500 text-xs font-medium">Irreversible action</p>
                 </div>
             </div>
-            <p class="text-gray-400 text-sm leading-relaxed mb-4">
-                This will <span class="text-red-400 font-semibold">permanently delete</span> your account, all uploaded PDFs, chat history, and associated data. This cannot be undone.
+
+            <p class="text-slate-600 text-xs leading-relaxed mb-6">
+                This will <span class="text-red-600 font-bold">permanently delete</span> your account, all chat history, and stored document embeddings.
             </p>
-            <div class="mb-5">
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Type <span class="text-red-400">DELETE</span> to confirm</label>
-                <input id="deleteConfirmInput" type="text" class="modal-input" placeholder="Type DELETE here..." oninput="checkDeleteConfirm()" autocomplete="off">
-            </div>
+
             <div class="flex items-center gap-3 justify-end">
-                <button class="btn-cancel" onclick="hideDeleteAccountModal()">Cancel</button>
-                <button id="confirmDeleteBtn" class="btn-danger" onclick="deleteAccount()">
+                <button type="button" class="w-1/2 py-3 rounded-2xl text-xs font-semibold border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all" onclick="hideDeleteAccountModal()">
+                    Cancel
+                </button>
+                <button id="confirmDeleteBtn" type="button" class="w-1/2 text-white font-bold py-3 rounded-2xl text-xs bg-red-600 hover:bg-red-700 transition-all shadow-md flex items-center justify-center gap-2" onclick="deleteAccount()">
                     <span id="deleteBtnText">Delete Forever</span>
                     <i id="deleteBtnSpinner" class="ph ph-spinner animate-spin hidden"></i>
                 </button>
@@ -319,121 +242,358 @@
         </div>
     </div>
 
-    <main class="flex-1 flex flex-col relative w-full h-full">
-        
-        <div class="md:hidden flex items-center justify-between p-4 border-b border-white/10 bg-bg/80 backdrop-blur-md sticky top-0 z-30">
-            <button onclick="toggleSidebar()" class="text-white p-1">
-                <i class="ph ph-list text-2xl"></i>
+    <!-- Success Toast (Bottom Right - Zero Header Overlap!) -->
+    <div id="toast-success" class="fixed bottom-24 right-6 transform translate-x-[200%] transition-transform duration-500 z-[100] flex items-center gap-3 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-[0_10px_30px_rgba(5,150,105,0.3)] backdrop-blur-md font-bold text-xs">
+        <i class="ph ph-check-circle-fill text-xl shrink-0"></i>
+        <div class="flex flex-col">
+            <span class="font-extrabold text-xs">Upload Successful</span>
+            <span class="text-[10px] opacity-90 uppercase tracking-wider">Document Indexed</span>
+        </div>
+    </div>
+
+    <!-- TOP NAVBAR HEADER -->
+    <header class="w-full h-16 border-b border-slate-200/70 glass-panel px-4 sm:px-6 flex items-center justify-between z-40 shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="text-slate-600 hover:text-slate-900 p-2 rounded-xl hover:bg-slate-100/80 transition flex items-center gap-1.5" title="Toggle Chat History Sidebar">
+                <i class="ph-bold ph-sidebar-simple text-xl"></i>
             </button>
-            <span class="font-semibold text-lg tracking-tight">DocuGPT</span>
-            <div class="w-8"></div> </div>
-
-        <div class="flex-1 overflow-y-auto scroll-smooth p-4 md:p-8 space-y-6" id="chat-container">
-            
-            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-center p-8">
-                <canvas id="sphereCanvas"></canvas>
-            </div>
-
-            <div id="chat-history" class="hidden flex flex-col w-full max-w-3xl mx-auto space-y-6 pb-4"></div>
-            
-            <div class="h-24 md:h-32"></div>
-        </div>
-
-        <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-bg via-bg to-transparent pt-10 pb-4 px-4 md:pb-6">
-            <div class="max-w-3xl mx-auto">
-                <div class="relative flex items-end gap-2 bg-inputbg border border-white/10 rounded-2xl shadow-2xl focus-within:border-accent/50 transition-all p-2">
-                    <textarea id="questionInput" rows="1" 
-                        class="w-full bg-transparent text-text placeholder-gray-500 text-base px-3 py-3 focus:outline-none resize-none max-h-32 overflow-y-auto" 
-                        placeholder="Message DocuGPT..."
-                        oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
-                        onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); askQuestion(); }"></textarea>
-                    
-                    <button onclick="askQuestion()" id="sendBtn" 
-                        class="mb-1 mr-1 p-2.5 rounded-xl text-gray-400 hover:text-white hover:text-black active:scale-95 transition shadow-lg">
-                        <i class="ph ph-paper-plane-right text-lg"></i>
-                    </button>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl gradient-btn flex items-center justify-center shadow-lg">
+                    <i class="ph-bold ph-robot text-white text-xl"></i>
                 </div>
-                <p class="text-center text-[10px] text-gray-600 mt-2">AI can make mistakes. Verify important info.</p>
+                <div>
+                    <div class="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-2">
+                        ChatPDF
+                        <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-[10px] text-indigo-700 font-bold uppercase tracking-wider">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span> Llama 3 RAG
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
-    </main>
+
+        <!-- Center Active PDF Indicator -->
+        <div id="top-document-indicator" class="hidden md:flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-100/80 border border-slate-200 text-xs text-slate-700 font-medium">
+            <i class="ph-bold ph-file-pdf text-indigo-600 text-sm"></i>
+            <span id="top-filename" class="truncate max-w-[200px]">No active PDF</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+            <span id="top-status" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Idle</span>
+        </div>
+
+        <!-- Right Header Actions -->
+        <div class="flex items-center gap-3">
+            <button onclick="document.getElementById('pdfFile').click()" 
+                class="gradient-btn text-white text-xs font-bold px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-lg hover:brightness-110 active:scale-95 transition">
+                <i class="ph-bold ph-plus text-sm"></i>
+                <span class="hidden sm:inline">Upload PDF</span>
+            </button>
+            <input type="file" id="pdfFile" accept=".pdf" class="hidden" />
+
+            <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+
+            <!-- User Menu -->
+            <div class="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200">
+                <div onclick="showDeleteAccountModal()" class="flex items-center gap-2 cursor-pointer hover:opacity-90 transition group" title="Click to Delete Account">
+                    <div class="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-xs font-bold group-hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] transition">
+                        {{ user.username[0] | upper }}
+                    </div>
+                    <span class="hidden sm:inline text-xs font-semibold text-slate-700 group-hover:text-red-600 transition pr-1">{{ user.username }}</span>
+                </div>
+                <a href="/logout" class="p-1 text-slate-400 hover:text-indigo-600 transition rounded-lg" title="Logout">
+                    <i class="ph ph-sign-out text-base"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN BODY CONTAINER -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <div id="mobile-overlay" onclick="toggleSidebar()" 
+             class="fixed inset-0 bg-slate-900/40 z-40 hidden transition-opacity duration-300 backdrop-blur-sm md:hidden"></div>
+
+        <!-- LEFT SIDEBAR: CHAT LIBRARY -->
+        <aside id="sidebar" 
+               class="fixed inset-y-0 left-0 z-50 w-72 glass-panel transform -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 md:flex flex-col border-r border-slate-200/70 shadow-2xl md:shadow-none shrink-0">
+            
+            <!-- New Chat & Chat History Header -->
+            <div class="p-3 border-b border-slate-200/60 space-y-2">
+                <button onclick="startNewChat()" class="w-full gradient-btn text-white text-xs font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md hover:brightness-110 active:scale-95 transition">
+                    <i class="ph-bold ph-plus text-sm"></i>
+                    <span>New Chat</span>
+                </button>
+                <div class="flex items-center justify-between px-1 pt-1">
+                    <div class="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <i class="ph ph-clock-counter-clock text-indigo-600 text-sm"></i>
+                        Chat History
+                    </div>
+                    <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">{{ chats|length }}</span>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="p-3 pt-2">
+                <div class="relative">
+                    <i class="ph ph-magnifying-glass text-slate-400 text-sm absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="chatSearch" placeholder="Search document chats..." 
+                        class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition"
+                        oninput="filterChats(this.value)">
+                </div>
+            </div>
+
+            <!-- Chat List -->
+            <div class="flex-1 overflow-y-auto px-2 no-scrollbar space-y-1">
+                
+                <div id="upload-widget" class="hidden mx-2 mb-3 p-3 rounded-xl bg-indigo-50 border border-indigo-200">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="ph ph-file-pdf text-indigo-600 text-lg"></i>
+                        <span class="text-xs font-bold text-slate-900 truncate" id="filename-display">file.pdf</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div id="spinner" class="animate-spin text-indigo-600"><i class="ph ph-spinner text-sm"></i></div>
+                        <span id="upload-status-text" class="text-xs text-slate-600">Indexing vector space...</span>
+                        <i id="status-icon" class="ph ph-check-circle text-emerald-600 hidden"></i>
+                    </div>
+                </div>
+
+                <div id="chatList" class="space-y-1">
+                    {% for chat in chats %}
+                    <div class="chat-item flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-slate-100 cursor-pointer transition group border border-transparent hover:border-slate-200" onclick="loadChat('{{ chat.id }}')" data-name="{{ chat.pdf_name | lower }}">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition">
+                            <i class="ph ph-file-pdf text-indigo-600 text-base"></i>
+                        </div>
+                        <div class="text-xs font-medium text-slate-700 truncate flex-1 group-hover:text-slate-900 transition">{{ chat.pdf_name }}</div>
+                        <button onclick="event.stopPropagation(); deleteChat('{{ chat.id }}', this)"
+                                class="p-1.5 text-slate-400 hover:text-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition delete-btn">
+                            <i class="ph ph-trash text-sm"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if not chats %}
+                <div class="flex flex-col items-center justify-center py-12 text-center px-4">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center mb-3 text-slate-400">
+                        <i class="ph ph-chat-teardrop-dots text-2xl"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed font-medium">No previous document chats.<br>Upload a PDF to begin.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-3 border-t border-slate-200/60 flex items-center justify-between">
+                <button onclick="showShortcutsToast()" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition text-xs font-semibold">
+                    <i class="ph ph-keyboard text-base"></i>
+                    <span>Shortcuts</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CHAT / CANVAS AREA -->
+        <main class="flex-1 flex flex-col relative w-full h-full min-w-0 bg-transparent">
+            
+            <div class="flex-1 overflow-y-auto scroll-smooth p-4 md:p-8 space-y-6" id="chat-container">
+                
+                <!-- EMPTY STATE: 3D PARTICLE ACCELERATOR BALL + HERO CARD CENTERED TOGETHER -->
+                <div id="empty-state" class="h-full flex flex-col items-center justify-center text-center p-4 relative overflow-hidden min-h-[480px]">
+                    
+                    <!-- 3D Particle Accelerator Ball Canvas (Centered Behind Upload Card) -->
+                    <div id="canvas-wrapper" class="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-0">
+                        <canvas id="sphereCanvas"></canvas>
+                    </div>
+
+                    <!-- Center Bento Hero Upload Card (Translucent Glass) -->
+                    <div class="empty-content relative z-10 flex flex-col items-center max-w-lg mx-auto text-center cursor-pointer group hero-glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-2xl hover:border-indigo-400/50 transition-all duration-300 my-auto" onclick="document.getElementById('pdfFile').click()">
+                        
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500/10 via-indigo-600/20 to-sky-500/10 border border-indigo-400/30 flex items-center justify-center shadow-lg shadow-indigo-500/10 mb-4 group-hover:scale-110 transition-all duration-300">
+                            <i class="ph-bold ph-file-pdf text-indigo-600 text-2xl"></i>
+                        </div>
+                        
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-bold uppercase tracking-widest mb-2">
+                            <span class="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
+                            AI Document Workspace Active
+                        </div>
+                        
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">Upload Your PDF Document</h2>
+                        <p class="text-xs text-slate-600 mt-1.5 font-normal leading-relaxed max-w-xs">
+                            Click anywhere or drag & drop a PDF to synthesize vector embeddings and start chatting
+                        </p>
+
+                        <!-- Quick Sample Prompt Pills -->
+                        <div class="flex flex-wrap items-center justify-center gap-2 mt-5">
+                            <button type="button" onclick="event.stopPropagation(); setPrompt('Summarize this document in 3 key bullet points')" class="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-[11px] text-slate-700 font-semibold transition-all">
+                                ⚡ Summarize PDF
+                            </button>
+                            <button type="button" onclick="event.stopPropagation(); setPrompt('What are the main key takeaways?')" class="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-[11px] text-slate-700 font-semibold transition-all">
+                                🔍 Key Takeaways
+                            </button>
+                            <button type="button" onclick="event.stopPropagation(); setPrompt('Extract all action items and important dates')" class="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-[11px] text-slate-700 font-semibold transition-all">
+                                🧠 Action Items
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- CHAT MESSAGES HISTORY -->
+                <div id="chat-history" class="hidden flex flex-col w-full max-w-3xl mx-auto space-y-6 pb-6"></div>
+                
+                <div class="h-24 md:h-32"></div>
+            </div>
+
+            <!-- BOTTOM CHAT INPUT COMMAND BAR -->
+            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent pt-10 pb-4 px-4 md:pb-6 z-30">
+                <div class="max-w-3xl mx-auto">
+                    <div class="relative flex items-end gap-2 glass-panel rounded-3xl p-2.5 border border-white/80 shadow-2xl focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/15 transition-all">
+                        
+                        <button onclick="document.getElementById('pdfFile').click()" class="p-2.5 text-slate-400 hover:text-indigo-600 transition rounded-2xl hover:bg-slate-100" title="Upload Document">
+                            <i class="ph-bold ph-paperclip text-lg"></i>
+                        </button>
+
+                        <textarea id="questionInput" rows="1" 
+                            class="w-full bg-transparent text-slate-900 placeholder-slate-400 text-sm sm:text-base px-2 py-2.5 focus:outline-none resize-none max-h-32 overflow-y-auto" 
+                            placeholder="Ask any question about your PDF..."
+                            oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                            onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); askQuestion(); }"></textarea>
+                        
+                        <button onclick="askQuestion()" id="sendBtn" 
+                            class="gradient-btn text-white p-3 rounded-2xl shadow-lg hover:brightness-110 active:scale-95 transition shrink-0">
+                            <i class="ph-bold ph-paper-plane-right text-base"></i>
+                        </button>
+                    </div>
+                    <p class="text-center text-[11px] text-slate-500 mt-2 font-medium">ChatPDF AI parses documents with 384-dimensional vector retrieval.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobile-overlay');
             
-            if (sidebar.classList.contains('-translate-x-full')) {
-                // Open Sidebar
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
+            if (window.innerWidth < 768) {
+                if (sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.remove('-translate-x-full');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                }
             } else {
-                // Close Sidebar
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
+                sidebar.classList.toggle('is-collapsed');
+                const isCollapsed = sidebar.classList.contains('is-collapsed');
+                localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
             }
         }
 
-        // --- TOAST NOTIFICATION FUNCTION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.innerWidth >= 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
+                document.getElementById('sidebar').classList.add('is-collapsed');
+            }
+        });
+
         function showToast() {
             const toast = document.getElementById('toast-success');
-            toast.classList.remove('-translate-y-[200%]'); // Slide In
-            toast.classList.add('translate-y-4'); // Position
+            toast.classList.remove('translate-x-[200%]');
+            toast.classList.add('translate-x-0');
             
-            // Hide after 3 seconds
             setTimeout(() => {
-                toast.classList.remove('translate-y-4');
-                toast.classList.add('-translate-y-[200%]'); // Slide Out
-            }, 3000);
+                toast.classList.remove('translate-x-0');
+                toast.classList.add('translate-x-[200%]');
+            }, 3500);
+        }
+
+        function setPrompt(text) {
+            const input = document.getElementById('questionInput');
+            input.value = text;
+            input.focus();
+            input.style.height = '';
+            input.style.height = input.scrollHeight + 'px';
+        }
+
+        function startNewChat() {
+            currentSessionId = null;
+            if (window.innerWidth < 768) toggleSidebar();
+
+            document.getElementById('top-filename').innerText = "No active PDF";
+            document.getElementById('top-status').innerText = "Idle";
+            document.getElementById('top-status').className = "text-[10px] text-slate-500 font-bold uppercase tracking-wider";
+
+            document.getElementById('chat-history').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+
+            const input = document.getElementById('questionInput');
+            input.value = '';
+            input.style.height = 'auto';
+
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('bg-indigo-50/90', 'border-indigo-300', 'shadow-sm');
+            });
+        }
+
+        function showShortcutsToast() {
+            alert("Keyboard Shortcuts:\n• Enter: Send Message\n• Shift + Enter: New Line\n• Drag & Drop: Fast Upload PDF");
+        }
+
+        function filterChats(query) {
+            const q = query.toLowerCase();
+            document.querySelectorAll('.chat-item').forEach(item => {
+                const name = item.getAttribute('data-name') || '';
+                item.style.display = name.includes(q) ? 'flex' : 'none';
+            });
         }
 
         // ==========================================
-        // 3D WHITE DUST PARTICLE SPHERE
+        // 3D ARC ACCELERATOR PARTICLE SYNTHESIS (LIGHT GLASS)
         // ==========================================
-        (function initDustSphere() {
+        (function initIronManSynthesis() {
             const canvas = document.getElementById('sphereCanvas');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             const container = document.getElementById('empty-state');
+            const parentSection = document.getElementById('empty-state');
 
             function resize() {
                 const rect = container.getBoundingClientRect();
-                const size = Math.min(rect.width, rect.height);
-                canvas.width = size;
-                canvas.height = size;
+                canvas.width = rect.width;
+                canvas.height = rect.height;
             }
             resize();
             window.addEventListener('resize', resize);
 
-            const PARTICLE_COUNT = 500;
+            const PARTICLE_COUNT = 850;
             const particles = [];
 
-            // Fibonacci sphere distribution
-            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
             for (let i = 0; i < PARTICLE_COUNT; i++) {
-                const y = 1 - (i / (PARTICLE_COUNT - 1)) * 2;
-                const radiusAtY = Math.sqrt(1 - y * y);
-                const theta = goldenAngle * i;
-
+                const angle = Math.random() * Math.PI * 2;
+                const ringRadius = 0.05 + Math.random() * 0.95;
                 particles.push({
-                    x: Math.cos(theta) * radiusAtY,
-                    y: y,
-                    z: Math.sin(theta) * radiusAtY,
-                    size: 0.5 + Math.random() * 1.0,
-                    drift: Math.random() * Math.PI * 2,
-                    driftSpeed: 0.001 + Math.random() * 0.002,
-                    driftAmp: 0.01 + Math.random() * 0.025,
+                    baseAngle: angle,
+                    radiusFrac: ringRadius,
+                    z: (Math.random() - 0.5) * 2.0,
+                    speed: 0.005 + Math.random() * 0.015,
+                    size: 1.2 + Math.random() * 2.2,
+                    pulse: Math.random() * Math.PI * 2,
+                    type: Math.random() > 0.3 ? 'indigo' : (Math.random() > 0.5 ? 'sky' : 'purple')
                 });
             }
 
+            let isHovered = false;
+            let currentScale = 0.44;
+
+            parentSection.addEventListener('mouseenter', () => { isHovered = true; });
+            parentSection.addEventListener('mouseleave', () => { isHovered = false; });
+
             let angleY = 0;
-            let angleX = 0.2;
             let mouseX = 0;
             let mouseY = 0;
 
             container.addEventListener('mousemove', (e) => {
                 const rect = container.getBoundingClientRect();
-                mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 0.4;
-                mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 0.4;
+                mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 0.5;
+                mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 0.5;
             });
 
             function render() {
@@ -442,13 +602,34 @@
                 if (W === 0 || H === 0) { requestAnimationFrame(render); return; }
                 const cx = W / 2;
                 const cy = H / 2;
-                const radius = Math.min(W, H) * 0.22;
+
+                const targetScale = isHovered ? 0.60 : 0.44;
+                currentScale += (targetScale - currentScale) * 0.06;
+
+                const maxRadius = Math.min(W, H) * currentScale;
 
                 ctx.clearRect(0, 0, W, H);
 
-                angleY += 0.003;
+                // Central Glow Core
+                const coreGlow = ctx.createRadialGradient(cx, cy, 5, cx, cy, maxRadius * 0.6);
+                coreGlow.addColorStop(0, 'rgba(79, 70, 229, 0.35)');
+                coreGlow.addColorStop(0.4, 'rgba(2, 132, 199, 0.15)');
+                coreGlow.addColorStop(1, 'rgba(99, 102, 241, 0)');
+                ctx.fillStyle = coreGlow;
+                ctx.beginPath();
+                ctx.arc(cx, cy, maxRadius * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Energy Ring
+                ctx.beginPath();
+                ctx.arc(cx, cy, maxRadius * 0.9, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(79, 70, 229, 0.2)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                angleY += 0.008;
                 const rotY = angleY + mouseX;
-                const rotX = angleX + mouseY;
+                const rotX = 0.25 + mouseY;
 
                 const cosY = Math.cos(rotY);
                 const sinY = Math.sin(rotY);
@@ -456,42 +637,55 @@
                 const sinX = Math.sin(rotX);
 
                 const projected = particles.map((p) => {
-                    const drift = Math.sin(p.drift + performance.now() * p.driftSpeed) * p.driftAmp;
-                    const px = p.x + drift;
-                    const py = p.y;
-                    const pz = p.z + drift * 0.5;
+                    p.baseAngle += p.speed;
+                    p.pulse += 0.03;
 
-                    let x1 = px * cosY - pz * sinY;
-                    let z1 = px * sinY + pz * cosY;
-                    let y1 = py;
+                    const currentRadius = p.radiusFrac * maxRadius * (1 + Math.sin(p.pulse) * 0.08);
+
+                    let x0 = Math.cos(p.baseAngle) * currentRadius;
+                    let y0 = Math.sin(p.baseAngle) * currentRadius;
+                    let z0 = p.z * maxRadius * 0.4;
+
+                    let x1 = x0 * cosY - z0 * sinY;
+                    let z1 = x0 * sinY + z0 * cosY;
+                    let y1 = y0;
 
                     let y2 = y1 * cosX - z1 * sinX;
                     let z2 = y1 * sinX + z1 * cosX;
 
                     return {
-                        sx: cx + x1 * radius,
-                        sy: cy + y2 * radius,
+                        sx: cx + x1,
+                        sy: cy + y2,
                         z: z2,
                         size: p.size,
+                        type: p.type
                     };
                 });
 
                 projected.sort((a, b) => a.z - b.z);
 
                 for (const pt of projected) {
-                    const depthFactor = (pt.z + 1) / 2;
-                    const alpha = 0.06 + depthFactor * 0.5;
-                    const sz = pt.size * (0.4 + depthFactor * 0.8);
+                    const depthFactor = (pt.z / maxRadius + 1) / 2;
+                    const alpha = 0.2 + depthFactor * 0.75;
+                    const sz = pt.size * (0.6 + depthFactor * 0.9);
 
                     ctx.beginPath();
                     ctx.arc(pt.sx, pt.sy, sz, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+
+                    if (pt.type === 'indigo') {
+                        ctx.fillStyle = `rgba(79, 70, 229, ${alpha})`;
+                    } else if (pt.type === 'sky') {
+                        ctx.fillStyle = `rgba(2, 132, 199, ${alpha})`;
+                    } else {
+                        ctx.fillStyle = `rgba(147, 51, 234, ${alpha})`;
+                    }
+
                     ctx.fill();
 
-                    if (depthFactor > 0.6) {
+                    if (depthFactor > 0.65) {
                         ctx.beginPath();
-                        ctx.arc(pt.sx, pt.sy, sz * 2.5, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.07})`;
+                        ctx.arc(pt.sx, pt.sy, sz * 2.8, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(79, 70, 229, ${alpha * 0.15})`;
                         ctx.fill();
                     }
                 }
@@ -503,7 +697,7 @@
         })();
 
         // ==========================================
-        // INTERACTIVE BACKGROUND SYSTEM
+        // INTERACTIVE BACKGROUND SYSTEM (FROSTED LIGHT)
         // ==========================================
         (function initInteractiveBg() {
             const canvas = document.getElementById('bgParticlesCanvas');
@@ -517,7 +711,6 @@
             resize();
             window.addEventListener('resize', resize);
 
-            // --- Mouse tracking ---
             let mouse = { x: -1000, y: -1000 };
             let mouseActive = false;
             document.addEventListener('mousemove', (e) => {
@@ -527,117 +720,89 @@
             });
             document.addEventListener('mouseleave', () => { mouseActive = false; });
 
-            // --- Particles ---
-            const PARTICLE_COUNT = 100;
-            const CONNECTION_DIST = 120;
-            const MOUSE_RADIUS = 150;
+            const PARTICLE_COUNT = 130;
+            const CONNECTION_DIST = 130;
+            const MOUSE_RADIUS = 160;
             const particles = [];
+            const sparkles = [];
 
             for (let i = 0; i < PARTICLE_COUNT; i++) {
                 particles.push({
                     x: Math.random() * window.innerWidth,
                     y: Math.random() * window.innerHeight,
-                    vx: (Math.random() - 0.5) * 0.4,
-                    vy: (Math.random() - 0.5) * 0.4,
-                    size: 0.8 + Math.random() * 1.5,
-                    baseAlpha: 0.1 + Math.random() * 0.25,
+                    vx: (Math.random() - 0.5) * 0.45,
+                    vy: (Math.random() - 0.5) * 0.45,
+                    size: 1.0 + Math.random() * 2.0,
+                    baseAlpha: 0.2 + Math.random() * 0.35,
                     pulse: Math.random() * Math.PI * 2,
+                    isIndigo: Math.random() > 0.3
                 });
             }
-
-            // --- Floating gradient orbs ---
-            const orbs = [
-                { x: 0.2, y: 0.3, r: 250, color: 'rgba(108, 55, 241, 0.04)', speed: 0.00008, phase: 0 },
-                { x: 0.7, y: 0.6, r: 300, color: 'rgba(53, 22, 132, 0.05)', speed: 0.00006, phase: 2 },
-                { x: 0.5, y: 0.8, r: 200, color: 'rgba(100, 217, 123, 0.025)', speed: 0.0001, phase: 4 },
-            ];
-
-            // --- Mouse trail sparkles ---
-            const sparkles = [];
-            const MAX_SPARKLES = 25;
 
             function render() {
                 const W = canvas.width;
                 const H = canvas.height;
                 ctx.clearRect(0, 0, W, H);
-                const t = performance.now();
 
-                // 1. Draw gradient orbs
-                for (const orb of orbs) {
-                    const ox = (orb.x + Math.sin(t * orb.speed + orb.phase) * 0.08) * W;
-                    const oy = (orb.y + Math.cos(t * orb.speed * 1.3 + orb.phase) * 0.06) * H;
-                    const grad = ctx.createRadialGradient(ox, oy, 0, ox, oy, orb.r);
-                    grad.addColorStop(0, orb.color);
-                    grad.addColorStop(1, 'transparent');
-                    ctx.fillStyle = grad;
-                    ctx.fillRect(ox - orb.r, oy - orb.r, orb.r * 2, orb.r * 2);
-                }
-
-                // 2. Update & draw particles
                 const positions = [];
                 for (const p of particles) {
-                    // Mouse repulsion
                     if (mouseActive) {
                         const dx = p.x - mouse.x;
                         const dy = p.y - mouse.y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist < MOUSE_RADIUS && dist > 0) {
-                            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.8;
+                            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.85;
                             p.vx += (dx / dist) * force;
                             p.vy += (dy / dist) * force;
                         }
                     }
 
-                    // Damping
-                    p.vx *= 0.98;
-                    p.vy *= 0.98;
+                    p.vx *= 0.97;
+                    p.vy *= 0.97;
 
-                    // Base drift
                     p.vx += (Math.random() - 0.5) * 0.02;
                     p.vy += (Math.random() - 0.5) * 0.02;
 
                     p.x += p.vx;
                     p.y += p.vy;
 
-                    // Wrap edges
                     if (p.x < -10) p.x = W + 10;
                     if (p.x > W + 10) p.x = -10;
                     if (p.y < -10) p.y = H + 10;
                     if (p.y > H + 10) p.y = -10;
 
-                    // Pulsing alpha
-                    p.pulse += 0.01;
-                    const alpha = p.baseAlpha + Math.sin(p.pulse) * 0.08;
+                    p.pulse += 0.015;
+                    const alpha = p.baseAlpha + Math.sin(p.pulse) * 0.1;
 
-                    // Glow when near mouse
                     let glowAlpha = 0;
                     if (mouseActive) {
                         const mdx = p.x - mouse.x;
                         const mdy = p.y - mouse.y;
                         const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
-                        if (mDist < MOUSE_RADIUS * 1.5) {
-                            glowAlpha = (1 - mDist / (MOUSE_RADIUS * 1.5)) * 0.4;
+                        if (mDist < MOUSE_RADIUS * 1.3) {
+                            glowAlpha = (1 - mDist / (MOUSE_RADIUS * 1.3)) * 0.4;
                         }
                     }
 
-                    // Draw particle
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha + glowAlpha})`;
+                    if (p.isIndigo) {
+                        ctx.fillStyle = `rgba(79, 70, 229, ${alpha + glowAlpha})`;
+                    } else {
+                        ctx.fillStyle = `rgba(2, 132, 199, ${alpha + glowAlpha})`;
+                    }
                     ctx.fill();
 
-                    // Extra glow ring near mouse
                     if (glowAlpha > 0.05) {
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(108, 55, 241, ${glowAlpha * 0.25})`;
+                        ctx.arc(p.x, p.y, p.size * 3.5, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(79, 70, 229, ${glowAlpha * 0.3})`;
                         ctx.fill();
                     }
 
                     positions.push({ x: p.x, y: p.y, alpha });
                 }
 
-                // 3. Draw connection lines between nearby particles
                 ctx.lineWidth = 0.5;
                 for (let i = 0; i < positions.length; i++) {
                     for (let j = i + 1; j < positions.length; j++) {
@@ -645,37 +810,37 @@
                         const dy = positions[i].y - positions[j].y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist < CONNECTION_DIST) {
-                            const lineAlpha = (1 - dist / CONNECTION_DIST) * 0.12;
+                            const lineAlpha = (1 - dist / CONNECTION_DIST) * 0.18;
                             ctx.beginPath();
                             ctx.moveTo(positions[i].x, positions[i].y);
                             ctx.lineTo(positions[j].x, positions[j].y);
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${lineAlpha})`;
+                            ctx.strokeStyle = `rgba(79, 70, 229, ${lineAlpha})`;
                             ctx.stroke();
                         }
                     }
                 }
 
-                // 4. Mouse sparkle trail
-                if (mouseActive && Math.random() > 0.5) {
+                // Interactive Mouse Sparkle Trail
+                if (mouseActive && Math.random() > 0.4) {
                     sparkles.push({
                         x: mouse.x + (Math.random() - 0.5) * 20,
                         y: mouse.y + (Math.random() - 0.5) * 20,
-                        size: 0.5 + Math.random() * 2,
-                        alpha: 0.5 + Math.random() * 0.5,
+                        size: 0.8 + Math.random() * 2,
+                        alpha: 0.6 + Math.random() * 0.4,
                         life: 1,
-                        decay: 0.015 + Math.random() * 0.02,
+                        decay: 0.02 + Math.random() * 0.02
                     });
-                    if (sparkles.length > MAX_SPARKLES) sparkles.shift();
+                    if (sparkles.length > 30) sparkles.shift();
                 }
 
                 for (let i = sparkles.length - 1; i >= 0; i--) {
                     const s = sparkles[i];
                     s.life -= s.decay;
                     if (s.life <= 0) { sparkles.splice(i, 1); continue; }
-                    s.y -= 0.3;
+                    s.y -= 0.35;
                     ctx.beginPath();
                     ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * s.life})`;
+                    ctx.fillStyle = `rgba(79, 70, 229, ${s.alpha * s.life})`;
                     ctx.fill();
                 }
 
@@ -684,7 +849,7 @@
             render();
         })();
 
-        // --- 2. Chat Logic (Same as before) ---
+        // --- Chat Logic ---
         const fileInput = document.getElementById('pdfFile');
         const uploadWidget = document.getElementById('upload-widget');
         const spinner = document.getElementById('spinner');
@@ -698,10 +863,15 @@
             if (this.files.length === 0) return;
             const file = this.files[0];
 
-            // Show widget & Open sidebar on mobile to show progress
             if (window.innerWidth < 768) toggleSidebar(); 
             
             document.getElementById('filename-display').innerText = file.name;
+            document.getElementById('top-filename').innerText = file.name;
+            document.getElementById('top-document-indicator').classList.remove('hidden');
+            document.getElementById('top-document-indicator').classList.add('flex');
+            document.getElementById('top-status').innerText = "Indexing...";
+            document.getElementById('top-status').className = "text-[10px] text-amber-600 font-bold uppercase tracking-wider";
+
             uploadWidget.classList.remove('hidden');
             spinner.classList.remove('hidden');
             statusIcon.classList.add('hidden');
@@ -719,28 +889,26 @@
                     spinner.classList.add('hidden');
                     statusIcon.classList.remove('hidden');
                     statusText.innerText = "Ready";
-                    statusText.className = "text-xs text-textcontrast";
+                    statusText.className = "text-xs text-emerald-600 font-bold";
                     
-                    // --- TRIGGER SUCCESS TOAST ---
+                    document.getElementById('top-status').innerText = "Ready";
+                    document.getElementById('top-status').className = "text-[10px] text-emerald-600 font-bold uppercase tracking-wider";
+
                     showToast();
                     
-                    // Close sidebar on mobile so user can chat
-                    if (window.innerWidth < 768) toggleSidebar();
-
                     emptyState.classList.add('hidden');
                     chatHistory.classList.remove('hidden');
                     chatHistory.innerHTML = '';
                     
-                    // --- CLEARER UPLOAD MESSAGE ---
                     addMessage("AI", `
-                        <div class="flex items-center gap-2 mb-2 p-3 bg-secondary/30 rounded-lg border border-secondary">
-                            <i class="ph ph-file-pdf text-2xl text-red-400"></i>
+                        <div class="flex items-center gap-3 mb-2 p-3.5 bg-indigo-50 rounded-2xl border border-indigo-200">
+                            <i class="ph ph-file-pdf text-3xl text-indigo-600"></i>
                             <div>
-                                <div class="font-bold text-white text-sm">${file.name}</div>
-                                <div class="text-[10px] text-gray-400">Upload Complete</div>
+                                <div class="font-bold text-slate-900 text-sm">${file.name}</div>
+                                <div class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Vector Embeddings Ready</div>
                             </div>
                         </div>
-                        I've analyzed your document. What would you like to know about it?
+                        I've parsed and indexed <strong>${file.name}</strong> into vector space. Ask me any question or summary!
                     `);
                 } else {
                     alert("Upload Error: " + data.error);
@@ -757,7 +925,7 @@
             
             if (!currentSessionId) {
                 alert("Please upload a PDF first.");
-                if (window.innerWidth < 768) toggleSidebar();
+                document.getElementById('pdfFile').click();
                 return;
             }
 
@@ -786,12 +954,28 @@
 
         async function loadChat(sessionId) {
             currentSessionId = sessionId;
-            if (window.innerWidth < 768) toggleSidebar(); // Close sidebar on mobile
+            if (window.innerWidth < 768) toggleSidebar();
             
             emptyState.classList.add('hidden');
             chatHistory.classList.remove('hidden');
             chatHistory.innerHTML = '';
             addLoading();
+
+            const chatEl = document.querySelector(`.chat-item[onclick*="${sessionId}"]`);
+            if (chatEl) {
+                const displayName = chatEl.querySelector('.truncate')?.innerText || 'Active PDF';
+                
+                document.getElementById('top-filename').innerText = displayName;
+                document.getElementById('top-document-indicator').classList.remove('hidden');
+                document.getElementById('top-document-indicator').classList.add('flex');
+                document.getElementById('top-status').innerText = "Ready";
+                document.getElementById('top-status').className = "text-[10px] text-emerald-600 font-bold uppercase tracking-wider";
+                
+                document.querySelectorAll('.chat-item').forEach(item => {
+                    item.classList.remove('bg-indigo-50/90', 'border-indigo-300', 'shadow-sm');
+                });
+                chatEl.classList.add('bg-indigo-50/90', 'border-indigo-300', 'shadow-sm');
+            }
 
             try {
                 const response = await fetch(`/get_history/${sessionId}`);
@@ -809,16 +993,16 @@
             div.className = "flex gap-3 md:gap-4 w-full text-sm md:text-base"; 
             
             const avatar = isAI 
-                ? `<div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-textcontrast flex items-center justify-center shrink-0 shadow-lg"><i class="ph ph-robot text-bg text-sm md:text-lg"></i></div>`
-                : `<div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 shadow-lg"><span class="text-xs font-bold text-white">U</span></div>`;
+                ? `<div class="w-8 h-8 rounded-xl gradient-btn flex items-center justify-center shrink-0 shadow-lg"><i class="ph-bold ph-robot text-white text-base"></i></div>`
+                : `<div class="w-8 h-8 rounded-xl bg-slate-200 border border-slate-300 flex items-center justify-center shrink-0 shadow-sm"><span class="text-xs font-bold text-slate-800">U</span></div>`;
 
             const formattedText = text ? text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') : "";
             
             div.innerHTML = `
                 ${avatar}
                 <div class="flex-1 min-w-0 space-y-1 pt-1">
-                    <div class="font-bold text-xs text-gray-400 uppercase tracking-wide">${isAI ? 'DocuGPT' : 'You'}</div>
-                    <div class="text-gray-100 leading-relaxed prose prose-invert max-w-none break-words">
+                    <div class="font-bold text-xs text-slate-500 uppercase tracking-wide">${isAI ? 'ChatPDF' : 'You'}</div>
+                    <div class="text-slate-800 leading-relaxed max-w-none break-words font-medium">
                         ${formattedText}
                     </div>
                 </div>
@@ -832,7 +1016,7 @@
             const div = document.createElement('div');
             div.id = id;
             div.className = "flex gap-4 w-full pl-1";
-            div.innerHTML = `<div class="flex items-center gap-1 mt-2"><div class="w-2 h-2 bg-gray-500 rounded-full typing-dot"></div><div class="w-2 h-2 bg-gray-500 rounded-full typing-dot"></div><div class="w-2 h-2 bg-gray-500 rounded-full typing-dot"></div></div>`;
+            div.innerHTML = `<div class="flex items-center gap-1.5 mt-2"><div class="w-2.5 h-2.5 bg-indigo-600 rounded-full typing-dot"></div><div class="w-2.5 h-2.5 bg-sky-600 rounded-full typing-dot"></div><div class="w-2.5 h-2.5 bg-indigo-400 rounded-full typing-dot"></div></div>`;
             chatHistory.appendChild(div);
             scrollToBottom();
             return id;
@@ -848,11 +1032,9 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // --- DELETE CHAT FUNCTION ---
         async function deleteChat(sessionId, button) {
             if (!confirm('Are you sure you want to delete this chat?')) return;
             
-            // Turn delete icon red and show loading state
             const icon = button.querySelector('i');
             icon.classList.remove('ph-trash');
             icon.classList.add('ph-spinner', 'animate-spin');
@@ -863,11 +1045,9 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // Reload page to refresh chat list
                     location.reload();
                 } else {
                     alert('Delete Error: ' + data.error);
-                    // Reset icon on error
                     icon.classList.remove('ph-spinner', 'animate-spin');
                     icon.classList.add('ph-trash');
                     button.classList.remove('text-red-500');
@@ -875,31 +1055,34 @@
             } catch (error) {
                 console.error(error);
                 alert('Failed to delete chat');
-                // Reset icon on error
                 icon.classList.remove('ph-spinner', 'animate-spin');
                 icon.classList.add('ph-trash');
                 button.classList.remove('text-red-500');
             }
         }
 
-        // --- DELETE ACCOUNT ---
         function showDeleteAccountModal() {
-            document.getElementById('deleteAccountModal').classList.add('active');
+            const modal = document.getElementById('deleteAccountModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
             document.getElementById('deleteConfirmInput').value = '';
-            document.getElementById('confirmDeleteBtn').classList.remove('enabled');
+            const btn = document.getElementById('confirmDeleteBtn');
+            btn.classList.add('opacity-40', 'pointer-events-none');
         }
 
         function hideDeleteAccountModal() {
-            document.getElementById('deleteAccountModal').classList.remove('active');
+            const modal = document.getElementById('deleteAccountModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
         function checkDeleteConfirm() {
             const val = document.getElementById('deleteConfirmInput').value.trim();
             const btn = document.getElementById('confirmDeleteBtn');
             if (val === 'DELETE') {
-                btn.classList.add('enabled');
+                btn.classList.remove('opacity-40', 'pointer-events-none');
             } else {
-                btn.classList.remove('enabled');
+                btn.classList.add('opacity-40', 'pointer-events-none');
             }
         }
 
@@ -908,7 +1091,6 @@
             const btnText = document.getElementById('deleteBtnText');
             const btnSpinner = document.getElementById('deleteBtnSpinner');
 
-            // Show loading state
             btnText.textContent = 'Deleting...';
             btnSpinner.classList.remove('hidden');
             btn.classList.remove('enabled');
@@ -933,54 +1115,6 @@
                 btn.classList.add('enabled');
             }
         }
-
-        // --- SEARCH / FILTER CHATS ---
-        function filterChats(query) {
-            const items = document.querySelectorAll('.chat-item');
-            const q = query.toLowerCase().trim();
-            items.forEach(item => {
-                const name = item.getAttribute('data-name') || '';
-                item.style.display = name.includes(q) ? '' : 'none';
-            });
-        }
-
-        // --- KEYBOARD SHORTCUTS TOAST ---
-        function showShortcutsToast() {
-            const existing = document.getElementById('shortcuts-toast');
-            if (existing) existing.remove();
-            const div = document.createElement('div');
-            div.id = 'shortcuts-toast';
-            div.className = 'fixed bottom-6 right-6 z-[200] p-4 rounded-2xl border border-white/10 shadow-2xl';
-            div.style.background = '#13101a';
-            div.style.minWidth = '240px';
-            div.innerHTML = `
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-white uppercase tracking-wider">Shortcuts</span>
-                    <button onclick="this.closest('#shortcuts-toast').remove()" class="text-gray-500 hover:text-white transition"><i class="ph ph-x text-sm"></i></button>
-                </div>
-                <div class="space-y-2 text-xs">
-                    <div class="flex justify-between"><span class="text-gray-400">New upload</span><kbd class="px-2 py-0.5 rounded bg-white/5 text-gray-300 font-mono text-[10px]">Ctrl+U</kbd></div>
-                    <div class="flex justify-between"><span class="text-gray-400">Search chats</span><kbd class="px-2 py-0.5 rounded bg-white/5 text-gray-300 font-mono text-[10px]">Ctrl+K</kbd></div>
-                    <div class="flex justify-between"><span class="text-gray-400">Send message</span><kbd class="px-2 py-0.5 rounded bg-white/5 text-gray-300 font-mono text-[10px]">Enter</kbd></div>
-                    <div class="flex justify-between"><span class="text-gray-400">New line</span><kbd class="px-2 py-0.5 rounded bg-white/5 text-gray-300 font-mono text-[10px]">Shift+Enter</kbd></div>
-                </div>
-            `;
-            document.body.appendChild(div);
-            setTimeout(() => { if (div.parentNode) div.remove(); }, 6000);
-        }
-
-        // --- KEYBOARD SHORTCUT LISTENERS ---
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
-                e.preventDefault();
-                document.getElementById('pdfFile').click();
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                const search = document.getElementById('chatSearch');
-                if (search) search.focus();
-            }
-        });
     </script>
 </body>
 </html>

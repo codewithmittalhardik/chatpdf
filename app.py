@@ -3,6 +3,7 @@ import uuid
 import datetime
 import urllib3
 import certifi
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 import pdfplumber  # <--- NEW LIBRARY (Replaces pypdf)
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
@@ -22,6 +23,16 @@ from pinecone import Pinecone, ServerlessSpec
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
+import dns.resolver
+
+# Configure dnspython fallback to public DNS (8.8.8.8 / 1.1.1.1) to fix local ISP SRV lookup failures
+try:
+    custom_resolver = dns.resolver.Resolver()
+    custom_resolver.nameservers = ['8.8.8.8', '1.1.1.1', '8.8.4.4']
+    dns.resolver.default_resolver = custom_resolver
+except Exception:
+    pass
+
 # Disable SSL verification warning (for development only)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -30,12 +41,50 @@ os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 load_dotenv()
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # --- CONFIGURATION ---
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-me')
-app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['PREFERRED_URL_SCHEME'] = 'https'
+
+# --- DATABASE: Auto-select Local MongoDB or Atlas ---
+# Tries local MongoDB first (for college networks / offline dev),
+# falls back to Atlas (for production / when local is not running)
+def _try_mongo(uri, label, tls=False):
+    """Attempt a quick ping to verify the MongoDB URI is reachable."""
+    from pymongo import MongoClient
+    try:
+        kwargs = {"serverSelectionTimeoutMS": 3000, "connectTimeoutMS": 3000}
+        if tls:
+            import certifi as _certifi
+            kwargs["tlsCAFile"] = _certifi.where()
+        client = MongoClient(uri, **kwargs)
+        client.admin.command("ping")   # will raise if unreachable
+        client.close()
+        return True
+    except Exception as e:
+        print(f"   [{label}] not reachable: {e}")
+        return False
+
+_local_uri   = os.getenv("LOCAL_MONGO_URI", "mongodb://localhost:27017/chatpdf_db")
+_atlas_uri   = os.getenv("MONGO_URI", "")
+_atlas_uri_t = (_atlas_uri + ("&" if "?" in _atlas_uri else "?") +
+                "serverSelectionTimeoutMS=5000&connectTimeoutMS=5000")
+
+print("🔍 Detecting MongoDB...")
+if _try_mongo(_local_uri, "Local MongoDB"):
+    app.config["MONGO_URI"] = _local_uri
+    _use_tls = False
+    print("✅ Using LOCAL MongoDB (mongodb://localhost:27017)")
+else:
+    app.config["MONGO_URI"] = _atlas_uri_t
+    _use_tls = True
+    print("☁️  Using MongoDB ATLAS (cloud)")
+
 
 # Enable CORS for mobile access
 CORS(app, resources={
@@ -49,8 +98,18 @@ CORS(app, resources={
 })
 
 # --- DATABASE & AUTH SETUP ---
-mongo = PyMongo(app, tlsCAFile=certifi.where())
-db = mongo.cx['chatpdf_db']
+try:
+    if _use_tls:
+        mongo = PyMongo(app, tlsCAFile=certifi.where())
+    else:
+        mongo = PyMongo(app)   # Local MongoDB — no TLS needed
+    db = mongo.cx['chatpdf_db']
+    print("✅ MongoDB connected successfully")
+except Exception as e:
+    print(f"⚠️  MongoDB connection failed: {e}")
+    print("   App will start but DB operations will fail.")
+    mongo = None
+    db = None
 bcrypt = Bcrypt(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -87,6 +146,7 @@ class User(UserMixin):
     def __init__(self, user_dict):
         self.id = str(user_dict['_id'])
         self.username = user_dict['username']
+        self.email = user_dict.get('email', '')
         self.password = user_dict['password']
 
 @login_manager.user_loader
@@ -95,6 +155,90 @@ def load_user(user_id):
     if user_data:
         return User(user_data)
     return None
+
+# --- EMAIL & TOKEN HELPERS FOR PASSWORD RESET ---
+def generate_reset_token(email):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    return serializer.dumps(email, salt='password-reset-salt')
+
+def verify_reset_token(token, expiration=900):  # 15 minutes validity
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(token, salt='password-reset-salt', max_age=expiration)
+        return email
+    except (SignatureExpired, BadTimeSignature):
+        return None
+
+import requests, smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+def send_reset_email(to_email, reset_url):
+    subject = "ChatPDF - Password Reset Link"
+    body = f"""Hello,
+
+You requested to reset your password for your ChatPDF account.
+Click the link below to reset your password:
+
+{reset_url}
+
+This link will expire in 15 minutes. If you did not request this, please ignore this email.
+
+Best regards,
+The ChatPDF Team
+"""
+
+    # --- 1. Try Resend (works for account owner email only on free tier) ---
+    resend_api_key = os.getenv('RESEND_API_KEY')
+    resend_sender  = os.getenv('MAIL_DEFAULT_SENDER', 'ChatPDF <onboarding@resend.dev>')
+    if resend_api_key:
+        try:
+            res = requests.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_api_key}", "Content-Type": "application/json"},
+                json={"from": resend_sender, "to": [to_email], "subject": subject, "text": body},
+                timeout=10
+            )
+            if res.status_code in [200, 201, 202]:
+                print(f"✅ Reset email sent via Resend to {to_email}")
+                return True
+            elif res.status_code != 403:
+                print(f"❌ Resend Error ({res.status_code}): {res.text}")
+                # Fall through to Gmail SMTP
+        except Exception as e:
+            print(f"⚠️ Resend failed: {e}, trying Gmail SMTP...")
+
+    # --- 2. Gmail SMTP fallback (works for ALL recipients in production) ---
+    mail_user = os.getenv('MAIL_USERNAME')
+    mail_pass = os.getenv('MAIL_PASSWORD')
+    mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    mail_port   = int(os.getenv('MAIL_PORT', 587))
+    smtp_sender = f"ChatPDF <{mail_user}>" if mail_user else None
+
+    if mail_user and mail_pass:
+        try:
+            msg = MIMEMultipart()
+            msg['From']    = smtp_sender
+            msg['To']      = to_email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'plain'))
+
+            server = smtplib.SMTP(mail_server, mail_port)
+            server.starttls()
+            server.login(mail_user, mail_pass)
+            server.send_message(msg)
+            server.quit()
+            print(f"✅ Reset email sent via Gmail SMTP to {to_email}")
+            return True
+        except Exception as e:
+            print(f"❌ Gmail SMTP Error: {e}")
+
+    # --- 3. Dev console fallback (no email configured) ---
+    print(f"\n{'='*55}")
+    print(f"[DEV] No email provider reached. Reset link:")
+    print(f"  {reset_url}")
+    print(f"{'='*55}\n")
+    return True
 
 # --- AUTH ROUTES ---
 
@@ -110,7 +254,12 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        user_data = db.users.find_one({"username": username})
+        user_data = db.users.find_one({
+            "$or": [
+                {"username": username},
+                {"email": username.lower()}
+            ]
+        })
         
         if user_data and bcrypt.check_password_hash(user_data['password'], password):
             user_obj = User(user_data)
@@ -121,48 +270,91 @@ def login():
             
     return render_template('login.html')
 
-@app.route('/reset_password', methods=['POST'])
-def reset_password():
-    username = request.form.get('username')
-    new_password = request.form.get('new_password')
-    confirm_password = request.form.get('confirm_password')
-    
-    if not username or not new_password:
-        flash('Please fill in all fields.', 'error')
+@app.route('/forgot_password', methods=['POST'])
+def forgot_password():
+    identity = request.form.get('identity', '').strip()
+    if not identity:
+        flash('Please enter your registered email or username.', 'error')
         return redirect(url_for('login'))
-        
-    if new_password != confirm_password:
-        flash('Passwords do not match.', 'error')
-        return redirect(url_for('login'))
-        
-    user_data = db.users.find_one({"username": username})
-    if not user_data:
-        flash('Username not found.', 'error')
-        return redirect(url_for('login'))
-        
-    hashed_pw = bcrypt.generate_password_hash(new_password).decode('utf-8')
-    db.users.update_one(
-        {"username": username},
-        {"$set": {"password": hashed_pw}}
-    )
-    
-    flash('Password reset successfully! Please login with your new password.', 'success')
+
+    user = db.users.find_one({
+        "$or": [
+            {"email": identity.lower()},
+            {"username": identity}
+        ]
+    })
+
+    if user and user.get('email'):
+        token = generate_reset_token(user['email'])
+        site_url = os.getenv('APP_URL', '').rstrip('/')
+        if site_url:
+            reset_url = f"{site_url}/reset_password/{token}"
+        else:
+            reset_url = url_for('reset_password_token', token=token, _external=True)
+        send_reset_email(user['email'], reset_url)
+        flash(f'Verification email sent to {user["email"]}! Check your inbox for the reset link.', 'success')
+    elif user and not user.get('email'):
+        flash('This account does not have an email registered. Please contact support.', 'error')
+    else:
+        # Standard response for security
+        flash('If an account exists with that email/username, a reset link has been sent.', 'success')
+
     return redirect(url_for('login'))
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password_token(token):
+    email = verify_reset_token(token)
+    if not email:
+        flash('The password reset link is invalid or has expired.', 'error')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not new_password or not confirm_password:
+            flash('Please fill in both password fields.', 'error')
+            return render_template('reset_password.html', token=token, email=email)
+
+        if new_password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('reset_password.html', token=token, email=email)
+
+        hashed_pw = bcrypt.generate_password_hash(new_password).decode('utf-8')
+        db.users.update_one(
+            {"email": email},
+            {"$set": {"password": hashed_pw}}
+        )
+
+        flash('Your password has been updated successfully! Please log in.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html', token=token, email=email)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username')
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password')
         
+        if not username or not email or not password:
+            flash('Please fill in all fields.', 'error')
+            return redirect(url_for('register'))
+
         if db.users.find_one({"username": username}):
-            flash('Username already exists. Please login.', 'error')
+            flash('Username already exists. Please choose another.', 'error')
+            return redirect(url_for('register'))
+
+        if db.users.find_one({"email": email}):
+            flash('An account with this email already exists. Please login.', 'error')
             return redirect(url_for('register'))
         
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
         
         db.users.insert_one({
             "username": username,
+            "email": email,
             "password": hashed_pw,
             "created_at": datetime.datetime.utcnow()
         })

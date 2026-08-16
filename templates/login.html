@@ -3,237 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | DocuGPT</title>
+    <title>ChatPDF | Workspace Access</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons CDN -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
     <style>
         :root {
-            --bg-color: #07050c;
-            --card-bg: rgba(19, 16, 26, 0.8);
-            --text-main: #e3dfec;
-            --text-muted: rgba(161, 136, 222, 0.6);
-            --accent: #6c37f1;
-            --input-border: rgba(53, 22, 132, 0.5);
-        }
-
-        /* Light Mode Variables Override */
-        body.light-mode {
-            --bg-color: #f5f7fa;
-            --card-bg: rgba(255, 255, 255, 0.7);
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --accent: #6366f1;
-            --input-border: rgba(0, 0, 0, 0.05);
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --glass-bg: rgba(255, 255, 255, 0.78);
+            --glass-border: rgba(255, 255, 255, 0.88);
+            --text-main: #0f172a;
+            --input-bg: rgba(255, 255, 255, 0.85);
+            --input-border: rgba(203, 213, 225, 0.85);
         }
 
         body {
-            background-color: var(--bg-color);
-            transition: background-color 0.5s ease;
+            background: #f1f5f9;
+            color: var(--text-main);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            overflow-x: hidden;
+            font-family: 'Outfit', sans-serif;
         }
 
-        /* Dark Mode Background */
         .bg-mesh {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-image: 
-                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
-            z-index: -1;
-            transition: opacity 0.5s ease;
+            pointer-events: none;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.09) 0%, transparent 50%);
+            filter: blur(40px);
         }
 
-        /* Light Mode Background overlay */
-        body.light-mode .bg-mesh {
-            opacity: 0.2;
-            background-image: 
-                radial-gradient(at 0% 0%, hsla(253,16%,90%,1) 0, transparent 50%), 
-                radial-gradient(at 50% 0%, hsla(225,39%,85%,1) 0, transparent 50%), 
-                radial-gradient(at 100% 0%, hsla(339,49%,85%,1) 0, transparent 50%);
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 60px -12px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.7);
         }
 
-        .glass-panel {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            transition: all 0.5s ease;
-        }
-
-        body.light-mode .glass-panel {
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .input-style {
-            background: rgba(0, 0, 0, 0.2);
+        .input-field {
+            background: var(--input-bg);
             border: 1px solid var(--input-border);
             color: var(--text-main);
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
         }
 
-        body.light-mode .input-style {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        .input-style:focus {
+        .input-field:focus {
             outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px rgba(108, 87, 241, 0.2);
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+        }
+
+        .gradient-btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #0284c7 100%);
+            background-size: 200% 200%;
+            transition: all 0.35s ease;
+        }
+
+        .gradient-btn:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%);
+            box-shadow: 0 12px 28px -6px rgba(168, 85, 247, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .bento-badge {
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+
+        /* Desktop GPU Smooth Sliding Panels */
+        @media (min-width: 1024px) {
+            .slide-panel {
+                transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
+                will-change: transform;
+            }
+            
+            /* In Login Mode: Hero on Left (0%), Form on Right (0%) */
+            #authContainer.mode-login #heroPanel {
+                transform: translateX(0%);
+            }
+            #authContainer.mode-login #formPanel {
+                transform: translateX(0%);
+            }
+
+            /* In Register Mode: Hero slides Right (100%), Form slides Left (-100%) */
+            #authContainer.mode-register #heroPanel {
+                transform: translateX(100%);
+            }
+            #authContainer.mode-register #formPanel {
+                transform: translateX(-100%);
+            }
+        }
+
+        /* Directional Text Sliding Animations */
+        .text-slide-content {
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, opacity;
+        }
+
+        /* In Login Mode */
+        #authContainer.mode-login .view-login-content {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+            position: relative;
+        }
+        #authContainer.mode-login .view-register-content {
+            opacity: 0;
+            transform: translateX(45px);
+            pointer-events: none;
+            position: absolute;
+            top: 0; left: 0; right: 0;
+        }
+
+        /* In Register Mode */
+        #authContainer.mode-register .view-login-content {
+            opacity: 0;
+            transform: translateX(-45px);
+            pointer-events: none;
+            position: absolute;
+            top: 0; left: 0; right: 0;
+        }
+        #authContainer.mode-register .view-register-content {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+            position: relative;
+        }
+
+        /* Tab Sliding Pill Indicator */
+        .tab-pill-indicator {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+        #authContainer.mode-login .tab-pill-indicator {
+            transform: translateX(0%);
+        }
+        #authContainer.mode-register .tab-pill-indicator {
+            transform: translateX(100%);
+        }
+
+        /* Hide tab label text during transition to avoid double-text ghost */
+        #authContainer.is-transitioning #txtTabLogin,
+        #authContainer.is-transitioning #txtTabRegister {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+        #txtTabLogin, #txtTabRegister {
+            transition: opacity 0.2s ease;
         }
     </style>
 </head>
-<body class="font-sans px-4">
+<body class="p-4 sm:p-6 lg:p-8 relative">
 
     <div class="bg-mesh"></div>
 
-    <button onclick="toggleTheme()" class="absolute top-6 right-6 w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl cursor-pointer hover:scale-110 transition-all z-50" style="color: var(--accent)">
-        <i id="themeIcon" class="ph-bold ph-moon"></i>
-    </button>
-
-    <div class="w-full max-w-[420px] glass-panel rounded-[2.5rem] p-10 relative overflow-hidden">
+    <!-- Main Auth Master Container (Supports Desktop Dual-Gliding Panels) -->
+    <div id="authContainer" class="w-full max-w-5xl glass-card rounded-[2.5rem] overflow-hidden min-h-[620px] shadow-2xl relative z-10 my-auto {% if request.path == '/register' %}mode-register{% else %}mode-login{% endif %}">
         
-        <div class="flex flex-col items-center mb-8">
-            <div class="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center shadow-xl mb-4" style="background-color: var(--accent)">
-                <i class="ph-bold ph-robot text-white text-2xl"></i>
-            </div>
-            <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-main)">DocuGPT</h1>
-            <p class="text-sm mt-1" style="color: var(--text-muted)">Welcome back to the future</p>
-        </div>
+        <!-- WRAPPER FOR PANELS (Flex on mobile, relative 50% split on desktop) -->
+        <div class="relative w-full h-full min-h-[620px] flex flex-col lg:block">
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="mb-4 p-3 rounded-xl border flex items-center gap-2 text-xs font-medium" 
-                         style="background: rgba(0,0,0,0.1); border-color: {% if category == 'error' %}#ef4444{% else %}#10b981{% endif %}; color: white;">
-                        <i class="ph {% if category == 'error' %}ph-warning-circle{% else %}ph-check-circle{% endif %} text-lg"></i>
-                        <span>{{ message }}</span>
+            <!-- 1. HERO SHOWCASE PANEL (Desktop: Left Half, slides Right on Register) -->
+            <div id="heroPanel" class="slide-panel w-full lg:w-1/2 lg:absolute lg:top-0 lg:left-0 lg:bottom-0 p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-white/70 via-indigo-50/50 to-sky-50/70 border-b lg:border-b-0 border-white/70 z-10">
+                
+                <!-- Ambient Glow Circles -->
+                <div class="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-indigo-400/25 blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-sky-400/25 blur-3xl pointer-events-none"></div>
+
+                <!-- Top Brand Header -->
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl gradient-btn flex items-center justify-center shadow-lg">
+                                <i class="ph-bold ph-robot text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <span class="font-extrabold text-xl tracking-tight text-slate-900">ChatPDF</span>
+                                <span class="block text-[10px] text-indigo-600 font-semibold uppercase tracking-widest">Frosted Glass Edition</span>
+                            </div>
+                        </div>
+                        <div class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bento-badge text-xs text-indigo-700 font-medium">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Llama 3 RAG Active
+                        </div>
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
 
-        <form action="/login" method="POST" class="space-y-5">
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-widest mb-2 ml-1" style="color: var(--text-muted)">Username</label>
-                <input type="text" name="username" placeholder="Enter username" required 
-                    class="w-full input-style rounded-2xl px-5 py-3.5 placeholder:opacity-30">
+                    <!-- Dynamic Directional Sliding Hero Text -->
+                    <div class="mt-10 sm:mt-12 relative min-h-[140px]">
+                        <!-- Login Hero Copy (Slides from Right-to-Left when returning to Login) -->
+                        <div id="heroLoginCopy" class="text-slide-content view-login-content">
+                            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                                Transform Any PDF into an <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-sky-600">Interactive AI Chat</span>
+                            </h2>
+                            <p class="mt-3 text-sm text-slate-600 max-w-lg font-normal leading-relaxed">
+                                Upload research papers, legal documents, or study material. Ask questions and get instant precise citations powered by vector embeddings.
+                            </p>
+                        </div>
+
+                        <!-- Register Hero Copy (Slides from Left-to-Right when switching to Register) -->
+                        <div id="heroRegisterCopy" class="text-slide-content view-register-content">
+                            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                                Unlock <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-sky-600">Intelligent PDF Analysis</span> in Seconds
+                            </h2>
+                            <p class="mt-3 text-sm text-slate-600 max-w-lg font-normal leading-relaxed">
+                                Create a free account to upload unlimited documents, store persistent chat history, and get lightning AI answers.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bento Feature Badges -->
+                <div class="relative z-10 my-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="bento-badge p-3.5 rounded-2xl flex flex-col justify-between hover:border-indigo-400/50 transition-all shadow-sm">
+                        <i class="ph-bold ph-file-pdf text-indigo-600 text-xl mb-2"></i>
+                        <div>
+                            <div class="text-xs font-bold text-slate-900">Smart Parsing</div>
+                            <div class="text-[10px] text-slate-500 mt-0.5">pdfplumber engine</div>
+                        </div>
+                    </div>
+                    <div class="bento-badge p-3.5 rounded-2xl flex flex-col justify-between hover:border-indigo-400/50 transition-all shadow-sm">
+                        <i class="ph-bold ph-lightning text-sky-600 text-xl mb-2"></i>
+                        <div>
+                            <div class="text-xs font-bold text-slate-900">Sub-Second RAG</div>
+                            <div class="text-[10px] text-slate-500 mt-0.5">384-dim Embeddings</div>
+                        </div>
+                    </div>
+                    <div class="bento-badge p-3.5 rounded-2xl flex flex-col justify-between hover:border-indigo-400/50 transition-all shadow-sm">
+                        <i class="ph-bold ph-shield-check text-emerald-600 text-xl mb-2"></i>
+                        <div>
+                            <div class="text-xs font-bold text-slate-900">Secure Auth</div>
+                            <div class="text-[10px] text-slate-500 mt-0.5">Resend Verified Link</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Footer Tagline -->
+                <div class="relative z-10 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-200/60">
+                    <span class="font-medium">Designed & Built by Hardik Mittal</span>
+                    <span class="text-[11px] text-indigo-600 font-semibold uppercase tracking-wider">v2.5 Light Pro</span>
+                </div>
             </div>
 
-            <div class="relative">
-                <div class="flex justify-between items-center mb-2 ml-1">
-                    <label class="text-xs font-bold uppercase tracking-widest" style="color: var(--text-muted)">Password</label>
-                    <button type="button" onclick="openForgotModal()" class="text-xs font-medium hover:underline" style="color: var(--accent)">Forgot?</button>
-                </div>
-                <div class="relative">
-                    <input id="password" type="password" name="password" placeholder="••••••••" required 
-                        class="w-full input-style rounded-2xl px-5 py-3.5 placeholder:opacity-30">
-                    <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity" style="color: var(--text-main)">
-                        <i id="toggleIcon" class="ph ph-eye text-xl"></i>
+            <!-- 2. FORM PANEL (Desktop: Right Half, slides Left on Register) -->
+            <div id="formPanel" class="slide-panel w-full lg:w-1/2 lg:absolute lg:top-0 lg:left-1/2 lg:bottom-0 p-8 sm:p-10 flex flex-col justify-center relative z-20 bg-white/40 lg:bg-transparent">
+                
+                <!-- Sliding Animated Auth Switcher Tab -->
+                <div class="relative flex items-center p-1 rounded-2xl bento-badge mb-6 max-w-sm mx-auto w-full">
+                    <!-- Sliding Background Pill -->
+                    <div class="tab-pill-indicator absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] gradient-btn rounded-xl shadow-md pointer-events-none"></div>
+                    
+                    <button type="button" onclick="setAuthMode('login')" class="relative z-10 flex-1 py-2 text-center text-xs font-bold transition-colors duration-200" id="btnTabLogin">
+                        <span id="txtTabLogin" class="{% if request.path == '/register' %}text-slate-600 hover:text-slate-900{% else %}text-white{% endif %}">Sign In</span>
+                    </button>
+                    <button type="button" onclick="setAuthMode('register')" class="relative z-10 flex-1 py-2 text-center text-xs font-bold transition-colors duration-200" id="btnTabRegister">
+                        <span id="txtTabRegister" class="{% if request.path == '/register' %}text-white{% else %}text-slate-600 hover:text-slate-900{% endif %}">Register</span>
                     </button>
                 </div>
+
+                <!-- Flash Messages Container -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="mb-5 p-3.5 rounded-2xl border flex items-center gap-2.5 text-xs font-medium transition-all" 
+                                 style="background: {% if category == 'error' %}rgba(239, 68, 68, 0.08){% else %}rgba(16, 185, 129, 0.08){% endif %}; 
+                                        border-color: {% if category == 'error' %}rgba(239, 68, 68, 0.2){% else %}rgba(16, 185, 129, 0.25){% endif %}; 
+                                        color: {% if category == 'error' %}#dc2626{% else %}#059669{% endif %};">
+                                <i class="ph {% if category == 'error' %}ph-warning-circle{% else %}ph-check-circle{% endif %} text-lg shrink-0"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- FORMS WRAPPER (Directional Sliding Between Sign In and Register) -->
+                <div class="relative min-h-[380px] w-full flex flex-col justify-center">
+
+                    <!-- A. SIGN IN FORM -->
+                    <div id="viewSignIn" class="text-slide-content view-login-content w-full">
+                        <div class="mb-6">
+                            <h3 class="text-2xl font-extrabold tracking-tight text-slate-900">Welcome back</h3>
+                            <p class="text-xs mt-1 text-slate-500">Enter your details to sign in to your workspace</p>
+                        </div>
+
+                        <form action="/login" method="POST" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider mb-2 ml-1 text-slate-500">Username or Email</label>
+                                <div class="relative">
+                                    <input type="text" name="username" placeholder="name@example.com or username" required 
+                                        class="w-full input-field rounded-2xl px-4 py-3.5 text-sm placeholder:text-slate-400 pl-11">
+                                    <i class="ph ph-user absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"></i>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-2 ml-1">
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Password</label>
+                                    <button type="button" onclick="openForgotModal()" class="text-xs font-semibold hover:underline text-indigo-600">Forgot?</button>
+                                </div>
+                                <div class="relative">
+                                    <input id="loginPassword" type="password" name="password" placeholder="••••••••" required 
+                                        class="w-full input-field rounded-2xl px-4 py-3.5 text-sm placeholder:text-slate-400 pl-11 pr-11">
+                                    <i class="ph ph-lock-key absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"></i>
+                                    <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-opacity">
+                                        <i class="ph ph-eye text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full text-white font-bold py-3.5 rounded-2xl gradient-btn text-sm shadow-xl mt-2 active:scale-[0.98]">
+                                Sign In to Workspace
+                            </button>
+                        </form>
+
+                        <p class="text-center text-xs mt-6 text-slate-500">
+                            Need an account? 
+                            <button type="button" onclick="setAuthMode('register')" class="font-bold text-indigo-600 hover:underline">Create one for free</button>
+                        </p>
+                    </div>
+
+                    <!-- B. REGISTER FORM -->
+                    <div id="viewRegister" class="text-slide-content view-register-content w-full">
+                        <div class="mb-6">
+                            <h3 class="text-2xl font-extrabold tracking-tight text-slate-900">Create Account</h3>
+                            <p class="text-xs mt-1 text-slate-500">Get started with your free ChatPDF workspace</p>
+                        </div>
+
+                        <form action="/register" method="POST" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider mb-2 ml-1 text-slate-500">Username</label>
+                                <div class="relative">
+                                    <input type="text" name="username" placeholder="Choose a username" required 
+                                        class="w-full input-field rounded-2xl px-4 py-3.5 text-sm placeholder:text-slate-400 pl-11">
+                                    <i class="ph ph-user absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"></i>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider mb-2 ml-1 text-slate-500">Email Address</label>
+                                <div class="relative">
+                                    <input type="email" name="email" placeholder="name@example.com" required 
+                                        class="w-full input-field rounded-2xl px-4 py-3.5 text-sm placeholder:text-slate-400 pl-11">
+                                    <i class="ph ph-envelope-simple absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"></i>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider mb-2 ml-1 text-slate-500">Password</label>
+                                <div class="relative">
+                                    <input id="regPassword" type="password" name="password" placeholder="••••••••" required 
+                                        class="w-full input-field rounded-2xl px-4 py-3.5 text-sm placeholder:text-slate-400 pl-11 pr-11">
+                                    <i class="ph ph-lock-key absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"></i>
+                                    <button type="button" onclick="togglePasswordVisibility('regPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-opacity">
+                                        <i class="ph ph-eye text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full gradient-btn text-white font-bold py-3.5 px-4 rounded-2xl text-sm shadow-lg mt-2 flex items-center justify-center gap-2">
+                                <span>Create Free Account</span>
+                            </button>
+                        </form>
+
+                        <p class="text-center text-xs mt-6 text-slate-500">
+                            Already have an account? 
+                            <button type="button" onclick="setAuthMode('login')" class="font-bold text-indigo-600 hover:underline">Log in here</button>
+                        </p>
+                    </div>
+
+                </div>
+
             </div>
 
-            <button type="submit" 
-                class="w-full text-white font-bold py-4 rounded-2xl shadow-lg transition-all hover:-translate-y-0.5 active:scale-[0.98]" 
-                style="background-color: var(--accent)">
-                Sign In
-            </button>
-        </form>
+        </div>
 
-        <p class="text-center text-sm mt-8" style="color: var(--text-muted)">
-            Don't have an account? 
-            <a href="/register" class="font-bold hover:underline" style="color: var(--accent)">Create one</a>
-        </p>
     </div>
 
     <!-- Forgot Password Modal -->
-    <div id="forgotModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
-        <div class="w-full max-w-[420px] glass-panel rounded-[2.5rem] p-8 relative animate-in fade-in zoom-in duration-200">
-            <button type="button" onclick="closeForgotModal()" class="absolute top-6 right-6 text-xl opacity-60 hover:opacity-100 transition-opacity" style="color: var(--text-main)">
+    <div id="forgotModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md hidden p-4">
+        <div class="w-full max-w-[390px] glass-card rounded-3xl p-7 relative transition-all duration-200 border border-white/80">
+            <button type="button" onclick="closeForgotModal()" class="absolute top-5 right-5 text-lg text-slate-400 hover:text-slate-700 transition-opacity">
                 <i class="ph ph-x"></i>
             </button>
 
-            <div class="flex flex-col items-center mb-6">
-                <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg mb-3" style="background-color: var(--accent)">
-                    <i class="ph-bold ph-key text-white text-xl"></i>
+            <div class="flex flex-col items-center mb-5 text-center">
+                <div class="w-12 h-12 rounded-2xl gradient-btn flex items-center justify-center shadow-lg mb-3">
+                    <i class="ph-bold ph-envelope-simple text-white text-xl"></i>
                 </div>
-                <h2 class="text-xl font-bold tracking-tight" style="color: var(--text-main)">Reset Password</h2>
-                <p class="text-xs mt-1 text-center" style="color: var(--text-muted)">Enter your username and choose a new password</p>
+                <h2 class="text-lg font-bold tracking-tight text-slate-900">Reset Password</h2>
+                <p class="text-xs mt-1 text-slate-500">Enter your email to receive a secure reset link</p>
             </div>
 
-            <form action="/reset_password" method="POST" class="space-y-4">
+            <form action="/forgot_password" method="POST" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-widest mb-1.5 ml-1" style="color: var(--text-muted)">Username</label>
-                    <input type="text" name="username" placeholder="Enter your username" required 
-                        class="w-full input-style rounded-2xl px-5 py-3 placeholder:opacity-30">
+                    <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5 ml-1 text-slate-500">Email Address</label>
+                    <div class="relative">
+                        <input type="email" name="identity" placeholder="name@example.com" required 
+                            class="w-full input-field rounded-2xl px-4 py-3 text-sm placeholder:text-slate-400 pl-11">
+                        <i class="ph ph-at absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"></i>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-widest mb-1.5 ml-1" style="color: var(--text-muted)">New Password</label>
-                    <input type="password" name="new_password" placeholder="••••••••" required 
-                        class="w-full input-style rounded-2xl px-5 py-3 placeholder:opacity-30">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-widest mb-1.5 ml-1" style="color: var(--text-muted)">Confirm New Password</label>
-                    <input type="password" name="confirm_password" placeholder="••••••••" required 
-                        class="w-full input-style rounded-2xl px-5 py-3 placeholder:opacity-30">
-                </div>
-
-                <div class="flex gap-3 pt-2">
+                <div class="flex gap-3 pt-1">
                     <button type="button" onclick="closeForgotModal()"
-                        class="w-1/2 py-3.5 rounded-2xl text-xs font-bold transition-all border border-white/10 hover:bg-white/5"
-                        style="color: var(--text-main)">
+                        class="w-1/2 py-3 rounded-2xl text-xs font-semibold transition-all border border-slate-200 hover:bg-slate-100 text-slate-700">
                         Cancel
                     </button>
                     <button type="submit"
-                        class="w-1/2 text-white font-bold py-3.5 rounded-2xl text-xs shadow-lg transition-all hover:-translate-y-0.5 active:scale-[0.98]"
-                        style="background-color: var(--accent)">
-                        Reset Password
+                        class="w-1/2 text-white font-bold py-3 rounded-2xl text-xs gradient-btn shadow-md">
+                        Send Link
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <footer class="mt-10 text-center">
-        <div class="inline-flex items-center gap-2 px-4 py-2 glass-panel rounded-full shadow-sm">
-            <span class="w-2 h-2 rounded-full animate-pulse" style="background-color: var(--accent)"></span>
-            <p class="text-xs font-semibold tracking-wide uppercase" style="color: var(--text-muted)">
-                Crafted by <span style="color: var(--accent)">Hardik Mittal</span>
-            </p>
-        </div>
-    </footer>
-
+    <!-- GPU Accelerated Smooth Directional Transition Script -->
     <script>
-        function toggleTheme() {
-            const body = document.body;
-            const icon = document.getElementById('themeIcon');
-            body.classList.toggle('light-mode');
-            
-            if (body.classList.contains('light-mode')) {
-                icon.classList.replace('ph-moon', 'ph-sun');
+        function setAuthMode(mode) {
+            const container = document.getElementById('authContainer');
+            const txtTabLogin = document.getElementById('txtTabLogin');
+            const txtTabRegister = document.getElementById('txtTabRegister');
+
+            // Briefly hide tab labels during slide so no ghost text shows
+            container.classList.add('is-transitioning');
+            setTimeout(() => container.classList.remove('is-transitioning'), 680);
+
+            if (mode === 'register') {
+                container.classList.remove('mode-login');
+                container.classList.add('mode-register');
+
+                // Update tab label colors after transition settles
+                setTimeout(() => {
+                    txtTabLogin.className = "text-slate-600 hover:text-slate-900";
+                    txtTabRegister.className = "text-white";
+                }, 340);
+
+                window.history.pushState(null, '', '/register');
+                document.title = "Create Account | ChatPDF";
             } else {
-                icon.classList.replace('ph-sun', 'ph-moon');
+                container.classList.remove('mode-register');
+                container.classList.add('mode-login');
+
+                // Update tab label colors after transition settles
+                setTimeout(() => {
+                    txtTabLogin.className = "text-white";
+                    txtTabRegister.className = "text-slate-600 hover:text-slate-900";
+                }, 340);
+
+                window.history.pushState(null, '', '/login');
+                document.title = "Sign In | ChatPDF";
             }
         }
 
-        function togglePassword() {
-            const pw = document.getElementById('password');
-            const icon = document.getElementById('toggleIcon');
-            if (pw.type === 'password') {
-                pw.type = 'text';
-                icon.classList.replace('ph-eye', 'ph-eye-slash');
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'ph ph-eye-slash text-lg';
             } else {
-                pw.type = 'password';
-                icon.classList.replace('ph-eye-slash', 'ph-eye');
+                input.type = 'password';
+                icon.className = 'ph ph-eye text-lg';
             }
         }
 
