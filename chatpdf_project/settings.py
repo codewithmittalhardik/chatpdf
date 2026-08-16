@@ -54,10 +54,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'chatpdf_project.wsgi.application'
 
+db_path = BASE_DIR / 'db.sqlite3'
+try:
+    test_file = BASE_DIR / '.perm_test'
+    test_file.touch()
+    test_file.unlink()
+except Exception:
+    db_path = Path('/tmp/db.sqlite3')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': db_path,
     }
 }
 
