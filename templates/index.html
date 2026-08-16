@@ -393,26 +393,15 @@
         <!-- MAIN CHAT / CANVAS AREA -->
         <main class="flex-1 flex flex-col relative w-full h-full min-w-0 bg-transparent">
             
-            <!-- Mobile-only User Info Bar (Shows active PDF name and delete button when loaded) -->
-            <div class="flex md:hidden items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-md border-b border-slate-200/60 z-30 shrink-0">
-                <div id="mobile-document-indicator" class="hidden items-center gap-1.5 text-xs text-slate-700 font-medium truncate max-w-[60%] bg-indigo-50/80 px-2 py-1 rounded-xl border border-indigo-200">
+            <!-- Mobile-only Active PDF Bar (Only appears when a PDF is active) -->
+            <div id="mobile-document-indicator" class="hidden md:hidden items-center justify-between px-4 py-2 bg-indigo-50/90 backdrop-blur-md border-b border-indigo-100 z-30 shrink-0">
+                <div class="flex items-center gap-2 text-xs text-slate-700 font-medium truncate max-w-[80%]">
                     <i class="ph-bold ph-file-pdf text-indigo-600 text-sm shrink-0"></i>
                     <span id="mobile-top-filename" class="truncate font-semibold text-slate-900"></span>
-                    <button onclick="event.stopPropagation(); deleteCurrentActiveChat(this)" class="p-1 text-slate-400 hover:text-red-500 transition rounded-lg shrink-0" title="Delete Active PDF">
-                        <i class="ph ph-trash text-sm"></i>
-                    </button>
                 </div>
-                <div class="flex items-center gap-2 ml-auto">
-                    <div onclick="showDeleteAccountModal()" class="flex items-center gap-1.5 bg-slate-100/90 px-2 py-1 rounded-xl border border-slate-200 cursor-pointer" title="Click to Delete Account">
-                        <div class="w-5 h-5 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                            {{ user.username[0] | upper }}
-                        </div>
-                        <span class="text-xs font-bold text-slate-800 max-w-[80px] truncate">{{ user.username }}</span>
-                    </div>
-                    <a href="/logout" class="p-1.5 text-slate-500 hover:text-red-600 bg-slate-100/90 rounded-xl border border-slate-200 transition flex items-center justify-center" title="Logout">
-                        <i class="ph ph-sign-out text-sm"></i>
-                    </a>
-                </div>
+                <button onclick="event.stopPropagation(); deleteCurrentActiveChat(this)" class="p-1 text-slate-400 hover:text-red-500 transition rounded-lg shrink-0" title="Delete Active PDF">
+                    <i class="ph ph-trash text-sm"></i>
+                </button>
             </div>
 
             <div class="flex-1 overflow-y-auto scroll-smooth p-4 md:p-8 space-y-6" id="chat-container">
