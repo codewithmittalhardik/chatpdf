@@ -188,7 +188,7 @@ Best regards,
 The ChatPDF Team
 """
 
-    # --- 1. Try Resend (works for account owner email only on free tier) ---
+    # --- 1. Resend API ---
     resend_api_key = os.getenv('RESEND_API_KEY')
     resend_sender  = os.getenv('MAIL_DEFAULT_SENDER', 'ChatPDF <onboarding@resend.dev>')
     if resend_api_key:
@@ -202,13 +202,35 @@ The ChatPDF Team
             if res.status_code in [200, 201, 202]:
                 print(f"✅ Reset email sent via Resend to {to_email}")
                 return True
-            elif res.status_code != 403:
-                print(f"❌ Resend Error ({res.status_code}): {res.text}")
-                # Fall through to Gmail SMTP
+            else:
+                print(f"⚠️ Resend status {res.status_code} for {to_email}: {res.text}")
         except Exception as e:
-            print(f"⚠️ Resend failed: {e}, trying Gmail SMTP...")
+            print(f"⚠️ Resend exception: {e}")
 
-    # --- 2. Gmail SMTP fallback (works for ALL recipients in production) ---
+    # --- 2. Brevo API (Free 300 emails/day to ANY recipient address) ---
+    brevo_api_key = os.getenv('BREVO_API_KEY')
+    if brevo_api_key:
+        try:
+            res = requests.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={"api-key": brevo_api_key, "Content-Type": "application/json"},
+                json={
+                    "sender": {"name": "ChatPDF", "email": os.getenv('MAIL_USERNAME', 'support@chatpdf.com')},
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": f"<p>{body.replace(chr(10), '<br>')}</p>"
+                },
+                timeout=10
+            )
+            if res.status_code in [200, 201, 202]:
+                print(f"✅ Reset email sent via Brevo to {to_email}")
+                return True
+            else:
+                print(f"⚠️ Brevo status {res.status_code}: {res.text}")
+        except Exception as e:
+            print(f"⚠️ Brevo exception: {e}")
+
+    # --- 3. Gmail SMTP fallback ---
     mail_user = os.getenv('MAIL_USERNAME')
     mail_pass = os.getenv('MAIL_PASSWORD')
     mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
@@ -233,9 +255,9 @@ The ChatPDF Team
         except Exception as e:
             print(f"❌ Gmail SMTP Error: {e}")
 
-    # --- 3. Dev console fallback (no email configured) ---
+    # --- 4. Dev console fallback ---
     print(f"\n{'='*55}")
-    print(f"[DEV] No email provider reached. Reset link:")
+    print(f"[DEV] Reset link for {to_email}:")
     print(f"  {reset_url}")
     print(f"{'='*55}\n")
     return True
